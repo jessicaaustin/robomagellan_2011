@@ -1,0 +1,10 @@
+make sure stage is installed, and your robomagellan package is on your ROS_PACKAGE_PATH
+
+in a terminal:
+ roscd stageros
+ ./bin/stageros world/willow-erratic.world
+
+in another terminal:
+ roscd robomagellan
+ rosrun robomagellan control.py 
+ 
