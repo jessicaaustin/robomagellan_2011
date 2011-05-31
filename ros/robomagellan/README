@@ -1,8 +1,7 @@
 make sure stage is installed, and your robomagellan package is on your ROS_PACKAGE_PATH
 
 in a terminal:
- roscd stageros
- ./bin/stageros world/willow-erratic.world
+ /opt/ros/diamondback/stacks/simulator_stage/stage/bin/stageros worlds/simple-course.world 
 
 in another terminal:
  roscd robomagellan
