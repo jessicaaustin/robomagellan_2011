@@ -173,7 +173,10 @@ def main():
 
         if control_curr_pos != None:
             # move the robot using algorithm
-            move_to_point(2,1,cmd_vel_pub)
+            move_to_point(1.0, 1.0, cmd_vel_pub)
+            move_to_point(5.0, 10.0, cmd_vel_pub)  
+            move_to_point(25.0, 10.0, cmd_vel_pub)
+            move_to_point(12.0, 25.0, cmd_vel_pub)
             exit()
 
 #            # move the robot manually

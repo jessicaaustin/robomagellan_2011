@@ -1,6 +1,9 @@
 make sure stage is installed, and your robomagellan package is on your ROS_PACKAGE_PATH
 
 in a terminal:
+ roscore
+
+in another terminal:
  /opt/ros/diamondback/stacks/simulator_stage/stage/bin/stageros worlds/simple-course.world 
 
 in another terminal:
