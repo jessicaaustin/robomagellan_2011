@@ -22,6 +22,11 @@ class PanTilt:
 
 		return
 
+	def setSpeed(self, newSpeed):
+		self.defaultSpeed = newSpeed
+
+		return
+
 	def exerciseCamera(self):
 		self.centerCamera()
 		time.sleep(1.0)
