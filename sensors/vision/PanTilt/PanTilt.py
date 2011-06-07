@@ -51,10 +51,10 @@ class PanTilt:
 	def panCamera(self, panFactor):
 		if (panFactor < -50):
 			panFactor = -50
-		elif (panFactor > 30):
-			panFactor = 30
+		elif (panFactor > 50):
+			panFactor = 50
 
-		pan = panFactor * 15 + 1500
+		pan = panFactor * 15 - 1500
 		self.cameraPanTilt.commandNoResponse("#%d P%d S%d" % (self.panServo, pan, self.defaultSpeed))
 
 		return
