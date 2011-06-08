@@ -2,7 +2,6 @@ import cv
 import sys
 
 sys.setrecursionlimit(25000)
-capture = cv.CaptureFromCAM(0) #Insert camera reference
 
 class BlobTracker :
     
