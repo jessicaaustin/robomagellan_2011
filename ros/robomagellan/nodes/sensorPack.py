@@ -28,7 +28,7 @@ def processNextSensorMessage(source):
 	# then extract the fields
 	messageFields = inputMessageBuffer.split('|')
 
-	if messageFields[0] = 'Se':
+	if messageFields[0] == 'Se':
 		return
 
 	elif messageFields[0] == '0':
