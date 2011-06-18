@@ -1,0 +1,5 @@
+<launch>
+	<node name="sensorPack"  pkg="robomagellan" type="sensorPack.py" />
+	<node name="motors"      pkg="robomagellan" type="motors.py" />
+	<node name="control"     pkg="robomagellan" type="control.py" />
+</launch>
