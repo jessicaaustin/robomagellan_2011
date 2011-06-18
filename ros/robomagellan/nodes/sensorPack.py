@@ -30,8 +30,6 @@ def processNextSensorMessage(source):
 	if inputMessageBuffer[-1] == '\r':
 		inputMessageBuffer = inputMessageBuffer[:-1]
 
-	rospy.loginfo(inputMessageBuffer)
-
 	# then extract the fields
 	messageFields = inputMessageBuffer.split('|')
 
