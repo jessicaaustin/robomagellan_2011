@@ -2,16 +2,22 @@
 # Defines a simple course with three bonus waypoints marked by traffic cones.
 #
 
-# A laser for our robot
-# TODO: add IR sensors instead
-define topurg laser
+# IR sensor: Parallx PING))) 
+define parallaxping laser
 (
-  range_max 30.0
-  fov 270.25
-  samples 1081
-  # generic model properties
-  color "black"
-  size [ 0.05 0.05 0.1 ]
+  # 2cm to 3m range
+  range_min 0.02
+  range_max 3.0
+
+  # 40 degrees field of view
+  fov 40.0
+
+  # number of laser samples per scan
+  samples 10
+
+  # how to display on the robot model
+  color "blue"
+  size [ 0.05 0.01 0.02 ]
 )
 
 # The model for our robot
@@ -22,11 +28,14 @@ define robot position
   origin [-0.05 0 0 0]
   gui_nose 1
   drive "diff"
-  # add the laser
-  # TODO add other sensors
-  topurg(pose [ 0.050 0.000 0 0.000 ])
+
   # Can hit things
   obstacle_return 1
+
+  # add the laser
+  # TODO add other sensors
+  # TODO get proper position
+  parallaxping(pose [ 0.050 0.000 0 0.000 ])
 )
 
 # the model for a traffic cone waypoint
