@@ -7,6 +7,7 @@
 import serial
 import threading
 import Queue
+import time
 
 synchronizer = threading.Event()
 
@@ -32,33 +33,30 @@ class Mover():
 	def move(self, movement):
 
 		"""
-			movement is interpreted as a 2-tuple, containing a velocity
-			for each of the left and right wheels
+			movement is interpreted as a 2-tuple. each value in the tuple
+			is a combination speed and direction for a wheel. the first value
+			is for the left wheel and the second for the right. positive values
+			rotate the wheel forward and negative values rotate it backwards.
+			zerp values stop the wheel
 		"""
-		leftVelocity, rightVelocity = movement
+		leftWheel, rightWheel = movement
 
 		# place the appropriate commands on each controllerQ
 		synchronizer.clear()
-		self.leftQ.put(leftVelocity)
-		self.rightQ.put(-(rightVelocity))
+		self.leftQ.put(leftWheel)
+		self.rightQ.put(-(rightWheel))
 		synchronizer.set()
 
 		return
 
-	def feedback(self, movementFeedback):
-		"""
-		 provide feedback about the last Move command. movementFeedback
-		 is a 2-tuple containing the actual heading and the actual
-		 speed.
-		"""
-		self.actualHeading, self.actualSpeed = movementFeedback
-
-		return
-
-	def abort(self):
+	def slamBrakes(self):
 		"""
 		 stop all motion immediately
 		"""
+		synchronizer.clear()
+		self.leftQ.put(0)
+		self.rightQ.put(0)
+		synchronizer.set()
 
 		return
 
@@ -69,15 +67,15 @@ class MotionMind(threading.Thread):
 
 		self.name = name
 		self.commandQueue = commandQueue
+		self.currentVelocity = 0
+		self.velocityIncrement = 10
+		self.incrementDelay = 0.1
 		self.serialPort = serial.Serial(port = serialPort,
 										baudrate = 9600,
 										timeout = 1)
 		self.serialPort.setRTS(level = True)
 		self.serialPort.setDTR(level = True)
 		self.address = address
-		self.forwardLimit = False
-		self.reverseLimit = False
-
 		# set all of the PID parameters
 		self.sendCommand("W%s 04 10000" % (self.address))# P gain
 		self.sendCommand("W%s 05 0" % (self.address))    # I gain
@@ -88,30 +86,39 @@ class MotionMind(threading.Thread):
 
 	def run(self):
 		while True:
-			velocity = self.commandQueue.get(True)
+			newVelocity = self.commandQueue.get(True)
 
-			self.checkForLimit()
-
-			if (velocity > 0 and self.forwardLimit):
-				return
-
-			if (velocity < 0 and self.reverseLimit):
-				return
-		
-			# write command to controller and read acknowledgement
-			command = "V%s %d" % (self.address, velocity)
-			print self.name, command
 			synchronizer.wait()
-			self.sendCommand(command)
+			if (self.currentVelocity < newVelocity):
+				# increasing
+				while self.currentVelocity + self.velocityIncrement < newVelocity:
+					self.currentVelocity = self.currentVelocity + self.velocityIncrement
+					command = "V%s %d" % (self.address, self.currentVelocity)
+					self.sendCommand(command)
+					time.sleep(self.incrementDelay)
 
-	def checkForLimit(self):
-		return
+				if (self.currentVelocity != newVelocity):
+					command = "V%s %d" % (self.address, newVelocity)
+					self.sendCommand(command)
+					self.currentVelocity = newVelocity
+
+			elif (self.currentVelocity > newVelocity) :
+				# decreasing
+				while self.currentVelocity - self.velocityIncrement > newVelocity:
+					self.currentVelocity = self.currentVelocity - self.velocityIncrement
+					command = "V%s %d" % (self.address, self.currentVelocity)
+					self.sendCommand(command)
+					time.sleep(self.incrementDelay)
+
+				if (self.currentVelocity != newVelocity):
+					command = "V%s %d" % (self.address, newVelocity)
+					self.sendCommand(command)
+					self.currentVelocity = newVelocity
 
 	def sendCommand(self, command):
 
 		self.serialPort.write("%s\r\n" % (command))
 		result = self.serialPort.read(20)
-		print self.address, result
 
 		return
 
