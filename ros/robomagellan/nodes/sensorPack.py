@@ -3,6 +3,8 @@ import roslib; roslib.load_manifest('robomagellan')
 import rospy
 import serial
 import string
+import sys
+import time
 from robomagellan.msg import Range
 from robomagellan.msg import Gyro
 
@@ -18,12 +20,17 @@ serialPort.setDTR(level = True)
 serialPort.flushInput()
 
 def processNextSensorMessage(source):
-	inputMessageBuffer = ''
 
 	# first read the next message
 	characterRead = source.read(1)
+	inputMessageBuffer = characterRead
 	while (characterRead != '\n'):
-		inputMessageBuffer = inputMessageBuffer + source.read(1)
+		characterRead = source.read(1)
+		inputMessageBuffer = inputMessageBuffer + characterRead
+	if inputMessageBuffer[-1] == '\r':
+		inputMessageBuffer = inputMessageBuffer[:-1]
+
+	rospy.loginfo(inputMessageBuffer)
 
 	# then extract the fields
 	messageFields = inputMessageBuffer.split('|')
@@ -41,15 +48,25 @@ def processNextSensorMessage(source):
 			if (currentGyro.rotationDirection == 'N' or currentGyro.rotationRate < 2):
 				return
 
-			gyroPublisher.publish(currentGyro)
+			try:
+				gyroPublisher.publish(currentGyro)
 		
+			except:
+				print sys.exc_info()[0]
+				rospy.loginfo('Unable to publish Gyro message')
+
 	elif messageFields[0] == 'Rg':
 		if len(messageFields) == 2:
 			currentRange.rangeInCm = int(messageFields[1])
 			if currentRange.rangeInCm > 110:
 				return
 
-			rangePublisher.publish(currentRange)
+			try:
+				rangePublisher.publish(currentRange)
+
+			except:
+				print sys.exc_info()[0]
+				rospy.loginfo('Unable to publish Range message')
 		
 	else:
 		rospy.loginfo('Unable to parse sensor message')
@@ -62,10 +79,13 @@ def sensorPack():
 
 	while not rospy.is_shutdown():
 		try:
-			processNextSensorMessage()
+			processNextSensorMessage(serialPort)
 		
 		except:
+			print sys.exc_info()[0]
 			rospy.loginfo('Unable to get sensor data')
+
+		time.sleep(0.5)
 
 if __name__== '__main__':
 	try:
