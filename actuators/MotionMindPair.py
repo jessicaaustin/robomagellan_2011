@@ -68,7 +68,7 @@ class MotionMind(threading.Thread):
 		self.name = name
 		self.commandQueue = commandQueue
 		self.currentVelocity = 0
-		self.velocityIncrement = 10
+		self.velocityIncrement = 250
 		self.incrementDelay = 0.1
 		self.serialPort = serial.Serial(port = serialPort,
 										baudrate = 9600,
