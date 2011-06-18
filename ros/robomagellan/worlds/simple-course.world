@@ -2,54 +2,8 @@
 # Defines a simple course with three bonus waypoints marked by traffic cones.
 #
 
-# IR sensor: Parallx PING))) 
-define parallaxping laser
-(
-  # 2cm to 3m range
-  range_min 0.02
-  range_max 3.0
-
-  # 40 degrees field of view
-  fov 40.0
-
-  # number of laser samples per scan
-  samples 10
-
-  # how to display on the robot model
-  color "blue"
-  size [ 0.05 0.01 0.02 ]
-)
-
-# The model for our robot
-define robot position
-(
-  # TODO get accurate size
-  size [0.35 0.35 0.25]
-  origin [-0.05 0 0 0]
-  gui_nose 1
-  drive "diff"
-
-  # Can hit things
-  obstacle_return 1
-
-  # add the laser
-  # TODO add other sensors
-  # TODO get proper position
-  parallaxping(pose [ 0.050 0.000 0 0.000 ])
-)
-
-# the model for a traffic cone waypoint
-define cone model
-(
-  bitmap "circle.png"
-  # 18 inch traffic cone
-  size [0.3 0.3 0.45]
-  color "orange"
-  gui_outline 0
-  # allows the cone to be pushed about
-  gripper_return 1
-  obstacle_return 0
-)
+include "robot.inc"
+include "cone.inc"
 
 # set the resolution of the underlying raytrace model in meters
 resolution 0.02
@@ -66,7 +20,7 @@ window
 )
 
 # place the robot in the world
-robot( pose [ 0.0 0.0 0 0.000 ] name "robot" color "blue")
+robot( pose [ 0.0 0.0 0 0.000 ] name "robot" color "gray")
 # place the waypoints
 cone( pose [ 1.0 1.0 0 0 ] name "waypoint0" )
 cone( pose [ 5.0 10.0 0 0 ] name "waypoint1" )
