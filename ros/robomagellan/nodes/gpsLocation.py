@@ -10,22 +10,25 @@
 
 from subprocess import Popen, PIPE, STDOUT
 from pyproj import Proj
+import os
 
 # constants
 TEST_MODE = True
 KNOT_TO_M_S = 0.514444444
 
-projection = Proj({'proj':'utm','zone':16,ellps:'WGS84'})
+# test data is currently zone 34, but chicago is zone 16
+#projection = Proj({'proj':'utm','zone':16,'ellps':'WGS84'})
+projection = Proj({'proj':'utm','zone':34,'ellps':'WGS84'})
 
 def knot_to_vel(num):
   return KNOT_TO_M_S * num
 
 def lat_lng_to_course_frame(lat,lng):
-  return lat,lng
+  return projection(lat/100,lng/100)
 
 CMD = 'gpsbabel -T -i garmin -f usb: -o nmea -F -'
 if TEST_MODE:
-  CMD = '/Users/jessica/dev/robomagellan/ros/robomagellan/test/gpsbabel'
+  CMD = os.getcwd() + '/../test/gpsbabel'
 
 firstLineFound = False
 

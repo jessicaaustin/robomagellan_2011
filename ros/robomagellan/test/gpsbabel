@@ -2,8 +2,9 @@
 
 from time import sleep
 import sys
+import os
 
-file = open("/Users/jessica/dev/robomagellan/ros/robomagellan/test/gpsbabel_test_data.txt")
+file = open(os.path.abspath( __file__ ) + "_test_data.txt")
 while 1:
     group = ''
     for i in range(0,6):
