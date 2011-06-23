@@ -8,5 +8,5 @@ in another terminal:
 
 in another terminal:
  roscd robomagellan
- rosrun robomagellan control.py 
+ rosrun robomagellan goToPoint.py 
  

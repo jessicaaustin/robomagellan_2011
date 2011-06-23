@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 #
-# The main control node of the robot.
+# goes to a given point, using proportional control for correction
 #  
+# TODO: cleanup code, remove duplication, don't use globals, etc
+# TODO: take in point to go to via ROS service instead of using hard-coded value
+# TODO: publish a reasonable amount of log messages
+#
 import roslib; roslib.load_manifest('robomagellan')
 
 import sys
