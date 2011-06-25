@@ -33,34 +33,18 @@ class Mover():
 	def move(self, movement):
 
 		"""
-			movement is interpreted as a 2-tuple. each value in the tuple
-			is a combination speed and direction for a wheel. the first value
-			is for the left wheel and the second for the right. positive values
-			rotate the wheel forward and negative values rotate it backwards.
-			zerp values stop the wheel
+			movement is expected to contain the three values from the Move message
 		"""
-		leftWheel, rightWheel = movement
+		leftWheel, rightWheel, rampUp = movement
 
 		# place the appropriate commands on each controllerQ
 		synchronizer.clear()
-		self.leftQ.put(leftWheel)
-		self.rightQ.put(-(rightWheel))
+		self.leftQ.put((leftWheel, rampUp))
+		self.rightQ.put((-(rightWheel), rampUp))
 		synchronizer.set()
 
 		return
 
-	def slamBrakes(self):
-		"""
-		 stop all motion immediately
-		"""
-		synchronizer.clear()
-		self.leftQ.put(0)
-		self.rightQ.put(0)
-		synchronizer.set()
-
-		return
-
-	
 class MotionMind(threading.Thread):
 	def __init__(self, name, serialPort, address, commandQueue):
 		threading.Thread.__init__(self)
