@@ -1,11 +1,13 @@
-#
+#!/usr/bin/env python
+
 # Read GPS data from Garmin device via gpsbabel, and extract out
 #   lat, lng, vel, and heading
 #
 # Uses pyproj to convert geographic coords (lat,lng) to local map coords (x,y)
 #   see http://code.google.com/p/pyproj/
 #
-# TODO: publish as ros topic
+# TODO: make this a class
+#   like this: http://nullege.com/codes/show/src%40i%40r%40irobot_400_series-HEAD%40bin%40driver.py/
 #
 
 import roslib; roslib.load_manifest('robomagellan')
@@ -23,12 +25,10 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
 # constants
-TEST_MODE = True
+TEST_MODE = False
 KNOT_TO_M_S = 0.514444444
 
-# test data is currently zone 34, but chicago is zone 16
-#projection = Proj({'proj':'utm','zone':16,'ellps':'WGS84'})
-projection = Proj({'proj':'utm','zone':34,'ellps':'WGS84'})
+projection = Proj({'proj':'utm','zone':16,'ellps':'WGS84'})
 init_x = None
 init_y = None
 
@@ -60,7 +60,8 @@ def publish_location(nmea_str, publisher):
   # TODO convert to radians? 
   odom.pose.pose.orientation.z = heading
 
-  rospy.loginfo(odom)
+  #rospy.loginfo(odom)
+  publisher.publish(odom)
 
 
 CMD = 'gpsbabel -T -i garmin -f usb: -o nmea -F -'
@@ -68,14 +69,16 @@ if TEST_MODE:
   CMD = os.getcwd() + '/../test/gpsbabel'
 
 def main():
-  pub = rospy.Publisher('odom', String)
+  pub = rospy.Publisher('odom', Odometry)
+  pub_raw = rospy.Publisher('gps_raw_data', String)
   rospy.init_node('gps_location')
   p = Popen(CMD, stdout = PIPE, stderr = STDOUT, shell = True)
   while not rospy.is_shutdown():
     line = p.stdout.readline()
     if not line: 
-      print 'nothing'
+      rospy.logerr("Could not read from GPS!")
       break
+    pub_raw.publish(line)
     if "GPRMC" in line:
       publish_location(line, pub)
 
