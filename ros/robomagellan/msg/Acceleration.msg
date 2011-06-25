@@ -1,6 +1,6 @@
 Header header
 #
-float xAcceleration
-float yAcceleration
-float zAcceleration
+float32 xAcceleration
+float32 yAcceleration
+float32 zAcceleration
 string orientation
