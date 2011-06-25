@@ -1,0 +1,13 @@
+Test bottom tier:
+  - get a lot of logged data
+    - gps
+    - accel
+    - camera
+    - motors ?
+  - can use these logs to verify that data is being converted properly
+
+test top tier:
+ - can use simulator (stage) to simulate /odom; we're just worried about sending /cmd_vel
+
+test waypoint-touching code:
+ - ???
