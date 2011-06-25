@@ -8,6 +8,7 @@
 #
 # TODO: make this a class
 #   like this: http://nullege.com/codes/show/src%40i%40r%40irobot_400_series-HEAD%40bin%40driver.py/
+# TODO: figure out LAT_OFFSET and LNG_OFFSET
 #
 
 import roslib; roslib.load_manifest('robomagellan')
@@ -27,6 +28,8 @@ from std_msgs.msg import String
 # constants
 TEST_MODE = False
 KNOT_TO_M_S = 0.514444444
+LAT_OFFSET = 0.0056
+LNG_OFFSET = -0.2683
 
 projection = Proj({'proj':'utm','zone':16,'ellps':'WGS84'})
 init_x = None
@@ -36,14 +39,17 @@ def knot_to_vel(num):
   return KNOT_TO_M_S * num
 
 def lat_lng_to_course_frame(lat,lng):
-  return projection(lat/100,lng/100)
+  return projection(lat,lng)
 
 def publish_location(nmea_str, publisher):
   nmea_arr = nmea_str.split(",")
-  lat = float(nmea_arr[3])
-  lng = float(nmea_arr[5])
+  lat = (float(nmea_arr[3]) / 100) + LAT_OFFSET
+  lng = (-1 * float(nmea_arr[5]) / 100) + LNG_OFFSET
   vel = float(nmea_arr[7])
   heading = float(nmea_arr[8])
+
+  rospy.loginfo('lat,lng=(%f,%f)' % (lat,lng))
+  rospy.loginfo('vel=%f,heading=%f' % (vel,heading))
 
   global init_x
   global init_y
