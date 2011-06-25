@@ -52,14 +52,15 @@ def publish_location(nmea_str, publisher):
 
   x,y = lat_lng_to_course_frame(lat,lng)
 
-  rospy.loginfo( "lat = %f" % lat ) 
-  rospy.loginfo( "lng = %f" % lng )
-  rospy.loginfo( "vel (knots) = %f" % vel )
-  rospy.loginfo( "heading = %f" % heading )
-  rospy.loginfo( "x (m, course frame) = %f" % (x - init_x) )
-  rospy.loginfo( "y (m, course frame)) = %f" % (y - init_y) )
-  rospy.loginfo( "vel (m/s) = %f" % knot_to_vel(vel) )
-  rospy.loginfo( "" )
+  odom = Odometry()
+
+  odom.pose.pose.position.x = x - init_x
+  odom.pose.pose.position.y = y - init_y
+  odom.twist.twist.linear.x = knot_to_vel(vel)
+  # TODO convert to radians? 
+  odom.pose.pose.orientation.z = heading
+
+  rospy.loginfo(odom)
 
 
 CMD = 'gpsbabel -T -i garmin -f usb: -o nmea -F -'
