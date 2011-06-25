@@ -1,12 +1,14 @@
+To run in simulation mode:
+
 make sure stage is installed, and your robomagellan package is on your ROS_PACKAGE_PATH
 
-in a terminal:
+startup roscore in a terminal:
  roscore
 
-in another terminal:
+in another terminal start stage:
  /opt/ros/diamondback/stacks/simulator_stage/stage/bin/stageros worlds/simple-course.world 
 
-in another terminal:
+in another terminal start your nodes, e.g.:
  roscd robomagellan
  rosrun robomagellan goToPoint.py 
  

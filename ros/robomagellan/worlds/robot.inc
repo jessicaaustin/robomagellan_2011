@@ -21,11 +21,13 @@ define parallaxping laser
 )
 
 # The model for our robot
+# mass: 6.3 kg
 define robot position
 (
-  # TODO get accurate size
-  size [0.35 0.35 0.25]
-  origin [-0.05 0 0 0]
+  # x y z
+  size [0.64 0.54 0.54]
+  # wheels are offset forward from the center
+  origin [-0.11 0 0 0]
   gui_nose 1
 
   drive "diff"
@@ -35,7 +37,7 @@ define robot position
 
   # TODO add other sensors
   # TODO get proper position of lasers
-  parallaxping(pose [ 0.150 0.000 -0.150 0.000 ])
+  parallaxping(pose [ 0.220 0.085 -0.390 0.000 ])
 )
 
 
