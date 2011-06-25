@@ -7,12 +7,14 @@ from robomagellan.msg import Move
 motors = MotionMindPair.Mover()
 
 def callback(moveMessage):
-	rospy.logdebug(rospy.get_name() + ' Left: %d, Right: %d ',
+	rospy.logdebug(rospy.get_name() + ' Left: %d, Right: %d, RampUp: %d',
 		moveMessage.leftWheel,
-		moveMessage.rightWheel)
+		moveMessage.rightWheel,
+		moveMessage.rampUp)
 
 	motors.move((moveMessage.leftWheel,
-				 moveMessage.rightWheel))
+				 moveMessage.rightWheel,
+				 moveMessage.rampUp))
 
 def controlMotors():
     rospy.init_node('motors', anonymous=True)
