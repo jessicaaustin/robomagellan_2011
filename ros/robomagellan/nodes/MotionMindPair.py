@@ -30,14 +30,21 @@ class Mover():
 
 		return
 
+	def checkForwardCollision(self):
+		if (self.leftController.forwardCollided or self.leftController.forwardCollision or
+			self.rightController.forwardCollided or self.rightController.forwardCollision):
+			self.leftController.resetForwardCollided()
+			self.rightController.resetForwardCollided()
+			return True
+		else:
+			return False
+			
 	def move(self, movement):
 
 		"""
 			movement is expected to contain the three values from the Move message
 		"""
 		leftWheel, rightWheel, rampUp = movement
-
-		print "move() %d, %d, %d" % (leftWheel, rightWheel, rampUp)
 
 		# place the appropriate commands on each controllerQ
 		synchronizer.clear()
@@ -54,6 +61,10 @@ class MotionMind(threading.Thread):
 		self.name = name
 		self.commandQueue = commandQueue
 		self.currentVelocity = 0
+		self.forwardCollision = False
+		self.forwardCollided = False
+		self.backwardCollision = False
+		self.backwardCollided = False
 		self.intervalDelay = 1.0
 		self.serialPort = serial.Serial(port = serialPort,
 										baudrate = 9600,
@@ -63,13 +74,47 @@ class MotionMind(threading.Thread):
 		self.address = address
 		# set all of the PID parameters
 		self.sendCommand("W%s 04 10000" % (self.address))# P gain
+		print self.readResponse()
 		self.sendCommand("W%s 05 0" % (self.address))    # I gain
+		print self.readResponse()
 		self.sendCommand("W%s 06 0" % (self.address))    # D gain 
+		print self.readResponse()
 		self.sendCommand("W%s 08 10000" % (self.address))# PID scalar
+		print self.readResponse()
 		
 		return
 
+	def resetForwardCollided(self):
+		self.forwardCollided = False
+
+		return
+
 	def checkForCollision(self):
+		self.serialPort.flushInput()
+		self.sendCommand("R%s 16" % (self.address))
+		response = self.readResponse()
+		print self.address, response
+
+		if (self.name == "left"):
+			forwardCollisionBit = 2
+			backwardCollisionBit = 1
+		else:
+			forwardCollisionBit = 1
+			backwardCollisionBit = 2
+
+
+		if (int(response.split('=')[1]) & forwardCollisionBit):
+			self.forwardCollision = True
+			self.forwardCollided = True
+		else:
+			self.forwardCollision = False
+
+		if (int(response.split('=')[1]) & backwardCollisionBit):
+			self.backwardCollision = True
+			self.backwardCollided = True
+		else:
+			self.backwardCollision = False
+
 		return
 
 	def run(self):
@@ -82,14 +127,12 @@ class MotionMind(threading.Thread):
 			velocityIncrement = int(velocityChange / rampUpSeconds)
 			intervals = rampUpSeconds
 
-			print "%s: %d, %d, %d, %d" % (self.name, self.currentVelocity, velocityChange, velocityIncrement, intervals)
-		
 			while (intervals > 0):
 				self.checkForCollision()
 				self.currentVelocity = self.currentVelocity + velocityIncrement
-				print "+%s: %d, %d, %d, %d" % (self.name, self.currentVelocity, velocityChange, velocityIncrement, intervals)
 				command = "V%s %d" % (self.address, self.currentVelocity)
 				self.sendCommand(command)
+				self.readResponse()
 				intervals = intervals - 1
 				if (intervals > 0):
 					time.sleep(self.intervalDelay)
@@ -98,13 +141,24 @@ class MotionMind(threading.Thread):
 			if (newVelocity != self.currentVelocity):
 				command = "V%s %d" % (self.address, newVelocity)
 				self.sendCommand(command)
+				self.readResponse()
 				self.currentVelocity = newVelocity
 				self.checkForCollision()
+
+	def readResponse(self):
+		response = ""
+		characterRead = self.serialPort.read(1)
+		while (characterRead != '\n'):
+			response = response + characterRead
+			characterRead = self.serialPort.read(1)
+		if (response[-1] == '\r'):
+			response = response[:-1]
+
+		return response
 
 	def sendCommand(self, command):
 
 		self.serialPort.write("%s\r\n" % (command))
-		result = self.serialPort.read(20)
 
 		return
 
