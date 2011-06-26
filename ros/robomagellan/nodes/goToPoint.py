@@ -2,6 +2,11 @@
 #
 # goes to a given point, using proportional control for correction
 #  
+# Subscribes to:
+#  /odom
+# Publishes to:
+#  /cmd_vel
+#  
 # TODO: cleanup code, remove duplication, don't use globals, etc
 # TODO: take in point to go to via ROS service instead of using hard-coded value
 # TODO: publish a reasonable amount of log messages
