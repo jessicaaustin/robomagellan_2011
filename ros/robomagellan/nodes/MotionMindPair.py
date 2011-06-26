@@ -37,6 +37,8 @@ class Mover():
 		"""
 		leftWheel, rightWheel, rampUp = movement
 
+		print "move() %d, %d, %d" % (leftWheel, rightWheel, rampUp)
+
 		# place the appropriate commands on each controllerQ
 		synchronizer.clear()
 		self.leftQ.put((leftWheel, rampUp))
@@ -52,8 +54,7 @@ class MotionMind(threading.Thread):
 		self.name = name
 		self.commandQueue = commandQueue
 		self.currentVelocity = 0
-		self.velocityIncrement = 10
-		self.incrementDelay = 0.1
+		self.intervalDelay = 1.0
 		self.serialPort = serial.Serial(port = serialPort,
 										baudrate = 9600,
 										timeout = 1)
@@ -68,36 +69,37 @@ class MotionMind(threading.Thread):
 		
 		return
 
+	def checkForCollision(self):
+		return
+
 	def run(self):
 		while True:
-			newVelocity, rampUp = self.commandQueue.get(True)
+			newVelocity, rampUpSeconds = self.commandQueue.get(True)
 
 			synchronizer.wait()
-			if (self.currentVelocity < newVelocity):
-				# increasing
-				while self.currentVelocity + self.velocityIncrement < newVelocity:
-					self.currentVelocity = self.currentVelocity + self.velocityIncrement
-					command = "V%s %d" % (self.address, self.currentVelocity)
-					self.sendCommand(command)
-					time.sleep(self.incrementDelay)
 
-				if (self.currentVelocity != newVelocity):
-					command = "V%s %d" % (self.address, newVelocity)
-					self.sendCommand(command)
-					self.currentVelocity = newVelocity
+			velocityChange = newVelocity - self.currentVelocity
+			velocityIncrement = int(velocityChange / rampUpSeconds)
+			intervals = rampUpSeconds
 
-			elif (self.currentVelocity > newVelocity) :
-				# decreasing
-				while self.currentVelocity - self.velocityIncrement > newVelocity:
-					self.currentVelocity = self.currentVelocity - self.velocityIncrement
-					command = "V%s %d" % (self.address, self.currentVelocity)
-					self.sendCommand(command)
-					time.sleep(self.incrementDelay)
+			print "%s: %d, %d, %d, %d" % (self.name, self.currentVelocity, velocityChange, velocityIncrement, intervals)
+		
+			while (intervals > 0):
+				self.checkForCollision()
+				self.currentVelocity = self.currentVelocity + velocityIncrement
+				print "+%s: %d, %d, %d, %d" % (self.name, self.currentVelocity, velocityChange, velocityIncrement, intervals)
+				command = "V%s %d" % (self.address, self.currentVelocity)
+				self.sendCommand(command)
+				intervals = intervals - 1
+				if (intervals > 0):
+					time.sleep(self.intervalDelay)
+				self.checkForCollision()
 
-				if (self.currentVelocity != newVelocity):
-					command = "V%s %d" % (self.address, newVelocity)
-					self.sendCommand(command)
-					self.currentVelocity = newVelocity
+			if (newVelocity != self.currentVelocity):
+				command = "V%s %d" % (self.address, newVelocity)
+				self.sendCommand(command)
+				self.currentVelocity = newVelocity
+				self.checkForCollision()
 
 	def sendCommand(self, command):
 
