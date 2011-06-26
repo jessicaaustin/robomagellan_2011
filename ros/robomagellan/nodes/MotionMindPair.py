@@ -70,7 +70,7 @@ class MotionMind(threading.Thread):
 
 	def run(self):
 		while True:
-			newVelocity = self.commandQueue.get(True)
+			newVelocity, rampUp = self.commandQueue.get(True)
 
 			synchronizer.wait()
 			if (self.currentVelocity < newVelocity):
