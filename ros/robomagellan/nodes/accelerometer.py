@@ -19,11 +19,6 @@ class Accelerometer():
 
 		self.minimumThreshold = 0.1
 
-	def getAcceleration(self):
-		"""
-		read the X, Y and Z values and return them as a tuple
-		"""
-
 		self.serialPort.flushInput()
 
 		#
@@ -33,8 +28,14 @@ class Accelerometer():
 		while (characterRead != '\r'):
 			characterRead = self.serialPort.read(1)
 
+
+	def getAcceleration(self):
+		"""
+		read the X, Y and Z values and return them as a tuple
+		"""
+
 		#
-		# and then read a whole message
+		# read a whole message
 		#
 		characterRead = self.serialPort.read(1)
 		inputMessageBuffer = characterRead
