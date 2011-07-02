@@ -10,6 +10,7 @@
 
 import roslib; roslib.load_manifest('robomagellan')
 from robomagellan.srv import GetNextWaypoint
+from robomagellan.msg import Waypoint
 
 import rospy
 from geometry_msgs.msg import Point
@@ -25,7 +26,10 @@ class WaypointServer():
 
   # TODO actually read from file
   def read_waypoints_from_file(self):
-    return [Point(1.0, 1.0, 0), Point(5.0, 10.0, 0), Point(25.0, 10.0, 0), Point(12.0, 25.0, 0)]
+    return [Waypoint('P', Point(1.0, 1.0, 0)), 
+            Waypoint('C', Point(5.0, 10.0, 0)), 
+            Waypoint('P', Point(25.0, 10.0, 0)), 
+            Waypoint('P', Point(12.0, 25.0, 0))]
  
 
 def handle_next_waypoint(server):

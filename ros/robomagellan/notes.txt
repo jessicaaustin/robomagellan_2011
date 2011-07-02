@@ -18,7 +18,7 @@ top-tier
    - takes in a list of ORDERED gps waypoints listed in a file
    - returns the next waypoint to go to
      - Point coordinate
-     - type (cone, intermediate waypoint, or finish)
+     - type (cone, intermediate waypoint)
    - right now this is very simple, could make this more sophisticated (take obstacles into account, that sort of thing)
    - waits for a message to say that that waypoint was reached to know when to pop it off the queue
  navigation node
@@ -34,7 +34,6 @@ top-tier
      - this is based on the type of our current waypoint
        - intermediate waypoint: /odom
        - cone waypoint: /odom + /collision
-       - finish waypoint: /odom
    - if there are no more waypoints, do nothing
 
 
