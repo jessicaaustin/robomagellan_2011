@@ -24,7 +24,8 @@ class WaypointServer():
   def current_waypoint(self):
     return self.waypoints[self.current_index]
 
-  def waypoint_reached(self):
+  def waypoint_reached(self, waypoint):
+    rospy.loginfo('marking waypoint as reached: %s' % waypoint) 
     if self.current_index == (len(self.waypoints) - 1):
       return "No waypoints remaining!"
     self.current_index += 1
@@ -40,7 +41,7 @@ class WaypointServer():
 
 def handle_waypoint_reached(server):
   def send_message_to_server(request):
-    return server.waypoint_reached()
+    return server.waypoint_reached(request.waypoint)
   return send_message_to_server
 
 def handle_next_waypoint(server):
