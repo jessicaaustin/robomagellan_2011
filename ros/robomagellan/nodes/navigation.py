@@ -27,6 +27,7 @@ import settings
 class TraversalNavigator():
   def __init__(self):
     self.control_curr_pos = None
+    self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist)
     return
 
   def setup_odom_callback(self):
@@ -35,14 +36,13 @@ class TraversalNavigator():
     return odom_callback
 
   def goToWaypoint(self, waypoint):
-    cmd_vel_pub = rospy.Publisher('cmd_vel', Twist)
 
     # start listening for the current position
     rospy.Subscriber('odom', Odometry, self.setup_odom_callback())
 
     while not rospy.is_shutdown():
       if self.control_curr_pos != None:
-        self.move_to_point(waypoint.coordinate.x, waypoint.coordinate.y, cmd_vel_pub)
+        self.move_to_point(waypoint)
         return
       else:
         # wait 1 second
@@ -50,9 +50,8 @@ class TraversalNavigator():
         rospy.sleep(1.0)
 
   # TODO cleanup, remove duplication 
-  # TODO use Waypoint instead
-  def move_to_point(self,x,y,cmd_vel_pub):
-      rospy.loginfo("Moving to location: (%d, %d)", x, y)
+  def move_to_point(self, waypoint):
+      rospy.loginfo("Moving to location: (%s)", waypoint)
 
       # initial position
       xpos = self.control_curr_pos.pose.pose.position.x
@@ -65,11 +64,12 @@ class TraversalNavigator():
       yi = ypos
 
       # desired location
-      xd = x
-      yd = y
+      xd = waypoint.coordinate.x
+      yd = waypoint.coordinate.y
       td = math.atan2(yd-yi, xd-xi)/math.pi
 
-      if (math.fabs(xpos-xd) < settings.WAYPOINT_THRESHOLD and math.fabs(ypos-yd) < settings.WAYPOINT_THRESHOLD):
+      if (math.fabs(xpos-xd) < settings.WAYPOINT_THRESHOLD and 
+          math.fabs(ypos-yd) < settings.WAYPOINT_THRESHOLD):
           rospy.loginfo("Point reached!")
           return
 
@@ -113,7 +113,7 @@ class TraversalNavigator():
           cmd = Twist()
           cmd.linear.x = 0.0
           cmd.angular.z = turnrate
-          cmd_vel_pub.publish(cmd)
+          self.cmd_vel_pub.publish(cmd)
 
           # wait a timestep before recalculating gains
           elapsedTime+=settings.TIMESTEP
@@ -121,7 +121,8 @@ class TraversalNavigator():
 
 
       # NOW, MOVE TOWARDS POINT
-      while (math.fabs(xpos-xd) > settings.WAYPOINT_THRESHOLD or math.fabs(ypos-yd) > settings.WAYPOINT_THRESHOLD):
+      while (math.fabs(xpos-xd) > settings.WAYPOINT_THRESHOLD or 
+              math.fabs(ypos-yd) > settings.WAYPOINT_THRESHOLD):
 
           distToPoint = math.sqrt( (xpos-xd)*(xpos-xd) + (ypos-yd)*(ypos-yd) )
 
@@ -156,7 +157,7 @@ class TraversalNavigator():
           cmd = Twist()
           cmd.linear.x = speed
           cmd.angular.z = turnrate
-          cmd_vel_pub.publish(cmd)
+          self.cmd_vel_pub.publish(cmd)
 
           # wait a timestep before recalculating gains
           elapsedTime+=settings.TIMESTEP

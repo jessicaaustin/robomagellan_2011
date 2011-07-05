@@ -4,6 +4,7 @@
 
 include "robot.inc"
 include "cone.inc"
+include "waypoint.inc"
 
 # set the resolution of the underlying raytrace model in meters
 resolution 0.02
@@ -22,7 +23,7 @@ window
 # place the robot in the world
 robot( pose [ 0.0 0.0 0 0.000 ] name "robot" color "gray")
 # place the waypoints
-cone( pose [ 1.0 1.0 0 0 ] name "waypoint0" )
+waypoint( pose [ 1.0 1.0 0 0 ] name "waypoint0" )
 cone( pose [ 5.0 10.0 0 0 ] name "waypoint1" )
-cone( pose [ 25.0 10.0 0 0 ] name "waypoint2" )
-cone( pose [ 12.0 25.0 0 0 ] name "waypoint3" )
+waypoint( pose [ 25.0 10.0 0 0 ] name "waypoint2" )
+waypoint( pose [ 12.0 25.0 0 0 ] name "waypoint3" )
