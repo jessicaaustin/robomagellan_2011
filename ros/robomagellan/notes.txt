@@ -12,6 +12,9 @@ test top tier:
 test waypoint-touching code:
  - ???
 
+TODO set up launch files
+ - simulation
+ - 'production'
 
 top-tier
  waypoints service node
