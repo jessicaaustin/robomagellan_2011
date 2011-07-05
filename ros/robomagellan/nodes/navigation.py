@@ -20,6 +20,8 @@ from nav_msgs.msg import Odometry
 from robomagellan.srv import *
 from robomagellan.msg import *
 
+import settings
+
 # Understands how to go to a given Waypoint, assuming no obstacles
 # Uses proportional control for correction
 class TraversalNavigator():
@@ -48,31 +50,9 @@ class TraversalNavigator():
         rospy.sleep(1.0)
 
   # TODO cleanup, remove duplication 
-  # TODO move magic numbers into settings file so they can be easily tweaked
   # TODO use Waypoint instead
   def move_to_point(self,x,y,cmd_vel_pub):
       rospy.loginfo("Moving to location: (%d, %d)", x, y)
-
-      # constants
-      TIMESTEP = .05 #seconds
-      TOLERANCE = .05 #meters
-      THETA_TOLERANCE = .05 #radians
-
-      # length of the robot
-      LENGTH = .5 #meters
-
-      # maximum speed and turnrate allowed for the robot
-      MAX_SPEED = 1 #m/s
-      MAX_TURNRATE = 1 #rad/s
-
-      # control parameters (for point-to-point controller)
-      LAMBDA = .2
-      A1 = 2
-      A2 = 1
-
-      # parameters for GVG
-      GRID_SIZE = .5
-      DIST_TOLERANCE = math.sqrt(2)*GRID_SIZE
 
       # initial position
       xpos = self.control_curr_pos.pose.pose.position.x
@@ -89,7 +69,7 @@ class TraversalNavigator():
       yd = y
       td = math.atan2(yd-yi, xd-xi)/math.pi
 
-      if (math.fabs(xpos-xd) < TOLERANCE and math.fabs(ypos-yd) < TOLERANCE):
+      if (math.fabs(xpos-xd) < settings.WAYPOINT_THRESHOLD and math.fabs(ypos-yd) < settings.WAYPOINT_THRESHOLD):
           rospy.loginfo("Point reached!")
           return
 
@@ -98,7 +78,7 @@ class TraversalNavigator():
       yerr = 0
       terr = 0
 
-      elapsedTime = TIMESTEP
+      elapsedTime = settings.TIMESTEP
 
       # Parameters for the line we're trying to follow
       slope = (yd - yinit)/(xd - xinit)
@@ -106,12 +86,8 @@ class TraversalNavigator():
       A = -slope
       C = slope * xd - yd
 
-      # output parameters
-      #double speed, turnrate
-      #double distToPoint, distToObj
-
       # FIRST, TURN ON THE SPOT
-      while (math.fabs(thetapos - td) > THETA_TOLERANCE):
+      while (math.fabs(thetapos - td) > settings.THETA_TOLERANCE):
 
           xpos = self.control_curr_pos.pose.pose.position.x
           ypos = self.control_curr_pos.pose.pose.position.y
@@ -125,11 +101,11 @@ class TraversalNavigator():
           rospy.logdebug("thdes=%s", td)
           rospy.logdebug("therr=%s", terr)
 
-          turnrate = LENGTH*A2*terr
-          if (turnrate > MAX_TURNRATE):
-              turnrate = MAX_TURNRATE
-          if (turnrate < -MAX_TURNRATE):
-              turnrate = -MAX_TURNRATE
+          turnrate = settings.ROBOT_LENGTH*settings.A2*terr
+          if (turnrate > settings.MAX_TURNRATE):
+              turnrate = settings.MAX_TURNRATE
+          if (turnrate < -settings.MAX_TURNRATE):
+              turnrate = -settings.MAX_TURNRATE
 
           rospy.logdebug("turnrate=%s", turnrate)
 
@@ -140,12 +116,12 @@ class TraversalNavigator():
           cmd_vel_pub.publish(cmd)
 
           # wait a timestep before recalculating gains
-          elapsedTime+=TIMESTEP
-          rospy.sleep(TIMESTEP)
+          elapsedTime+=settings.TIMESTEP
+          rospy.sleep(settings.TIMESTEP)
 
 
       # NOW, MOVE TOWARDS POINT
-      while (math.fabs(xpos-xd) > TOLERANCE or math.fabs(ypos-yd) > TOLERANCE):
+      while (math.fabs(xpos-xd) > settings.WAYPOINT_THRESHOLD or math.fabs(ypos-yd) > settings.WAYPOINT_THRESHOLD):
 
           distToPoint = math.sqrt( (xpos-xd)*(xpos-xd) + (ypos-yd)*(ypos-yd) )
 
@@ -166,15 +142,15 @@ class TraversalNavigator():
           rospy.logdebug("thdes=%s", td)
           rospy.logdebug("therr=%s", terr)
 
-          speed =  LAMBDA * xerr
-          if (speed > MAX_SPEED):
-              speed = MAX_SPEED
+          speed =  settings.LAMBDA * xerr
+          if (speed > settings.MAX_SPEED):
+              speed = settings.MAX_SPEED
 
-          turnrate = -1 * LENGTH * (A1 * yerr - A2 * terr)
-          if (turnrate > MAX_TURNRATE):
-              turnrate = MAX_TURNRATE
-          if (turnrate < -MAX_TURNRATE):
-              turnrate = -MAX_TURNRATE
+          turnrate = -1 * settings.ROBOT_LENGTH * (settings.A1 * yerr - settings.A2 * terr)
+          if (turnrate > settings.MAX_TURNRATE):
+              turnrate = settings.MAX_TURNRATE
+          if (turnrate < -settings.MAX_TURNRATE):
+              turnrate = -settings.MAX_TURNRATE
 
           # move the robot
           cmd = Twist()
@@ -183,8 +159,8 @@ class TraversalNavigator():
           cmd_vel_pub.publish(cmd)
 
           # wait a timestep before recalculating gains
-          elapsedTime+=TIMESTEP
-          rospy.sleep(TIMESTEP)
+          elapsedTime+=settings.TIMESTEP
+          rospy.sleep(settings.TIMESTEP)
 
       rospy.loginfo("Point reached!")
 
