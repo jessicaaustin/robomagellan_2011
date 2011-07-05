@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+
+# 
+# For testing/demonstration purposes only
+#
+
 import roslib; roslib.load_manifest('robomagellan')
 
 import rospy

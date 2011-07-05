@@ -10,5 +10,6 @@ in another terminal start stage:
 
 in another terminal start your nodes, e.g.:
  roscd robomagellan
- rosrun robomagellan goToPoint.py 
+ rosrun robomagellan waypoints.py
+ rosrun robomagellan navigation.py
  

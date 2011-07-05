@@ -5,10 +5,7 @@
 # Publishes to:
 #  /cmd_vel
 #  
-# TODO: take in point to go to via ROS service instead of using hard-coded value
-# TODO: publish a reasonable amount of log messages
-# TODO: use robomagellan.msg/Waypoint
-#
+
 import roslib; roslib.load_manifest('robomagellan')
 
 import sys
@@ -208,11 +205,39 @@ class ManualControlNavigator():
     return
 
 
+def get_next_waypoint():
+  rospy.wait_for_service('next_waypoint')
+  try:
+    next_waypoint_service = rospy.ServiceProxy('next_waypoint', GetNextWaypoint)
+    resp = next_waypoint_service('')
+    return resp.waypoint
+  except rospy.ServiceException, e:
+    print "Service call failed: %s"%e
+
+def waypoint_reached(waypoint):
+  rospy.wait_for_service('waypoint_reached')
+  try:
+    waypoint_reached_service = rospy.ServiceProxy('waypoint_reached', WaypointReached)
+    resp = waypoint_reached_service(waypoint)
+    rospy.loginfo(resp)
+    return resp.message
+  except rospy.ServiceException, e:
+    print "Service call failed: %s"%e
+
 def main():
   rospy.init_node('navigation')
   navigator = TraversalNavigator()
-  waypoint = Waypoint('C', Point(1, 1, 0))  
-  navigator.goToWaypoint(waypoint)
+
+  response = ''
+  while response != 'No waypoints remaining!':
+    rospy.loginfo("Requesting next waypoint")
+    waypoint = get_next_waypoint()
+    navigator.goToWaypoint(waypoint)
+
+    rospy.loginfo("Marking waypoint as reached")
+    response = waypoint_reached(waypoint)
+
+  rospy.loginfo("Done.")
 
 if __name__ == '__main__':
     try:
