@@ -1,0 +1,6 @@
+<launch>
+	<node name="stage" pkg="stage" type="stageros" args="$(find robomagellan)/worlds/simple-course.world" respawn="false" />
+	<node name="rxconsole" pkg="rxtools" type="rxconsole" respawn="false" />
+	<node name="waypoints" pkg="robomagellan" type="waypoints.py" respawn="true" />
+	<node name="navigation" pkg="robomagellan" type="navigation.py" respawn="true" />
+</launch>
