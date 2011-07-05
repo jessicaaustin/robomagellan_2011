@@ -9,8 +9,8 @@
 #
 
 import roslib; roslib.load_manifest('robomagellan')
-from robomagellan.srv import GetNextWaypoint
-from robomagellan.msg import Waypoint
+from robomagellan.srv import *
+from robomagellan.msg import *
 
 import rospy
 from geometry_msgs.msg import Point
@@ -24,6 +24,12 @@ class WaypointServer():
   def current_waypoint(self):
     return self.waypoints[self.current_index]
 
+  def waypoint_reached(self):
+    if self.current_index == (len(self.waypoints) - 1):
+      return "No waypoints remaining!"
+    self.current_index += 1
+    return ("Waypoint reached! %d waypoints remaining" % (len(self.waypoints) - self.current_index))
+
   # TODO actually read from file
   def read_waypoints_from_file(self):
     return [Waypoint('P', Point(1.0, 1.0, 0)), 
@@ -31,6 +37,11 @@ class WaypointServer():
             Waypoint('P', Point(25.0, 10.0, 0)), 
             Waypoint('P', Point(12.0, 25.0, 0))]
  
+
+def handle_waypoint_reached(server):
+  def send_message_to_server(request):
+    return server.waypoint_reached()
+  return send_message_to_server
 
 def handle_next_waypoint(server):
   def get_current_waypoint_from_server(request):
@@ -40,7 +51,8 @@ def handle_next_waypoint(server):
 def waypoints_server():
   rospy.init_node('waypoints_server')
   server = WaypointServer()
-  s = rospy.Service('next_waypoint', GetNextWaypoint, handle_next_waypoint(server))
+  rospy.Service('next_waypoint', GetNextWaypoint, handle_next_waypoint(server))
+  rospy.Service('waypoint_reached', WaypointReached, handle_waypoint_reached(server))
   rospy.loginfo('ready')
   rospy.spin()
 
