@@ -15,6 +15,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../nodes/")
 import rospy
 from robomagellan.msg import *
 from robomagellan.srv import *
+from CollisionPublisher import *
 
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
@@ -22,9 +23,12 @@ from nav_msgs.msg import Odometry
 import math
 import settings
 
+from MotionMindPair import CollisionPublisher
+
 class CollisionMock():
     def __init__(self):
         self.current_pos = None
+        self.collision_publisher = CollisionPublisher()
 
     def get_next_waypoint(self):
         rospy.wait_for_service('next_waypoint')
@@ -42,17 +46,20 @@ class CollisionMock():
     def check_for_collision(self):
         if self.current_pos != None:
             waypoint = self.get_next_waypoint()
-            if waypoint.type == 'C':
-                if (math.fabs(self.current_pos.x-waypoint.coordinate.x) < settings.COLLISION_THRESHOLD and
+            if (waypoint.type == 'C' and 
+                    math.fabs(self.current_pos.x-waypoint.coordinate.x) < settings.COLLISION_THRESHOLD and
                     math.fabs(self.current_pos.y-waypoint.coordinate.y) < settings.COLLISION_THRESHOLD):
-                    rospy.loginfo('COLLISION!')
+                rospy.loginfo('COLLISION!')
+                self.collision_publisher.publish_collision(True, False)
+            else:
+                self.collision_publisher.publish_collision(False, False)
         else:
             rospy.loginfo('Waiting for current position')
 
 if __name__ == "__main__":
-    rospy.init_node('collision_node')
+    rospy.init_node('collision_mock')
     collision_mock = CollisionMock()
     rospy.Subscriber('odom', Odometry, collision_mock.setup_odom_callback())
     while not rospy.is_shutdown():
         collision_mock.check_for_collision()
-        rospy.sleep(1.0)
+        rospy.sleep(0.5)
