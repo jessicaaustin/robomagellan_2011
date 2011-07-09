@@ -49,7 +49,6 @@ class TraversalNavigator():
         rospy.loginfo("Waiting for current position...")
         rospy.sleep(1.0)
 
-  # TODO cleanup, remove duplication 
   def move_to_point(self, waypoint):
       rospy.loginfo("Moving to location: (%s)", waypoint)
 

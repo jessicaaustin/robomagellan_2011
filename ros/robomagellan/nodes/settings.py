@@ -32,3 +32,9 @@ LAMBDA=.2
 A1=2
 # feedback proportional to angular (theta) error
 A2=1
+
+
+#
+# testing
+#
+COLLISION_THRESHOLD=.6

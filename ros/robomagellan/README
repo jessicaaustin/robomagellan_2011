@@ -1,5 +1,8 @@
 To run in simulation mode:
  make sure stage is installed, and your robomagellan package is on your ROS_PACKAGE_PATH
+ make the project:
+      roscd robomagellan
+      rosmake
  use roslaunch to start up the simulation stack:
       roslaunch robomagellan robomagellan-sim.launch
  
