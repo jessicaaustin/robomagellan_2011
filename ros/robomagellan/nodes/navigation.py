@@ -4,7 +4,7 @@
 #  /odom
 # Publishes to:
 #  /cmd_vel
-#  
+#
 
 import roslib; roslib.load_manifest('robomagellan')
 
@@ -25,195 +25,195 @@ import settings
 # Understands how to go to a given Waypoint, assuming no obstacles
 # Uses proportional control for correction
 class TraversalNavigator():
-  def __init__(self):
-    self.control_curr_pos = None
-    self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist)
-    return
-
-  def setup_odom_callback(self):
-    def odom_callback(data):
-      self.control_curr_pos = data
-    return odom_callback
-
-  def goToWaypoint(self, waypoint):
-
-    # start listening for the current position
-    rospy.Subscriber('odom', Odometry, self.setup_odom_callback())
-
-    while not rospy.is_shutdown():
-      if self.control_curr_pos != None:
-        self.move_to_point(waypoint)
+    def __init__(self):
+        self.control_curr_pos = None
+        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist)
         return
-      else:
-        # wait 1 second
-        rospy.loginfo("Waiting for current position...")
-        rospy.sleep(1.0)
 
-  def move_to_point(self, waypoint):
-      rospy.loginfo("Moving to location: (%s)", waypoint)
+    def setup_odom_callback(self):
+        def odom_callback(data):
+            self.control_curr_pos = data
+        return odom_callback
 
-      # initial position
-      xpos = self.control_curr_pos.pose.pose.position.x
-      ypos = self.control_curr_pos.pose.pose.position.y
-      thetapos = self.control_curr_pos.pose.pose.orientation.z
-      xinit = xpos
-      yinit = ypos
+    def goToWaypoint(self, waypoint):
 
-      xi = xpos
-      yi = ypos
+        # start listening for the current position
+        rospy.Subscriber('odom', Odometry, self.setup_odom_callback())
 
-      # desired location
-      xd = waypoint.coordinate.x
-      yd = waypoint.coordinate.y
-      td = math.atan2(yd-yi, xd-xi)/math.pi
+        while not rospy.is_shutdown():
+            if self.control_curr_pos != None:
+                self.move_to_point(waypoint)
+                return
+            else:
+                # wait 1 second
+                rospy.loginfo("Waiting for current position...")
+                rospy.sleep(1.0)
 
-      if (math.fabs(xpos-xd) < settings.WAYPOINT_THRESHOLD and 
-          math.fabs(ypos-yd) < settings.WAYPOINT_THRESHOLD):
-          rospy.loginfo("Point reached!")
-          return
+    def move_to_point(self, waypoint):
+        rospy.loginfo("Moving to location: (%s)", waypoint)
 
-      # error in lateral and longitudinal distances
-      xerr = 0
-      yerr = 0
-      terr = 0
+        # initial position
+        xpos = self.control_curr_pos.pose.pose.position.x
+        ypos = self.control_curr_pos.pose.pose.position.y
+        thetapos = self.control_curr_pos.pose.pose.orientation.z
+        xinit = xpos
+        yinit = ypos
 
-      elapsedTime = settings.TIMESTEP
+        xi = xpos
+        yi = ypos
 
-      # Parameters for the line we're trying to follow
-      slope = (yd - yinit)/(xd - xinit)
-      B = 1
-      A = -slope
-      C = slope * xd - yd
+        # desired location
+        xd = waypoint.coordinate.x
+        yd = waypoint.coordinate.y
+        td = math.atan2(yd-yi, xd-xi)/math.pi
 
-      # FIRST, TURN ON THE SPOT
-      while (math.fabs(thetapos - td) > settings.THETA_TOLERANCE):
+        if (math.fabs(xpos-xd) < settings.WAYPOINT_THRESHOLD and
+            math.fabs(ypos-yd) < settings.WAYPOINT_THRESHOLD):
+            rospy.loginfo("Point reached!")
+            return
 
-          xpos = self.control_curr_pos.pose.pose.position.x
-          ypos = self.control_curr_pos.pose.pose.position.y
-          thetapos = self.control_curr_pos.pose.pose.orientation.z
+        # error in lateral and longitudinal distances
+        xerr = 0
+        yerr = 0
+        terr = 0
 
-          terr = td - thetapos
+        elapsedTime = settings.TIMESTEP
 
-          rospy.logdebug("*** turning...")
-          rospy.logdebug("pos=(%s, %s)", xpos, ypos)
-          rospy.logdebug("theta=%s", thetapos)
-          rospy.logdebug("thdes=%s", td)
-          rospy.logdebug("therr=%s", terr)
+        # Parameters for the line we're trying to follow
+        slope = (yd - yinit)/(xd - xinit)
+        B = 1
+        A = -slope
+        C = slope * xd - yd
 
-          turnrate = settings.ROBOT_LENGTH*settings.A2*terr
-          if (turnrate > settings.MAX_TURNRATE):
-              turnrate = settings.MAX_TURNRATE
-          if (turnrate < -settings.MAX_TURNRATE):
-              turnrate = -settings.MAX_TURNRATE
+        # FIRST, TURN ON THE SPOT
+        while (math.fabs(thetapos - td) > settings.THETA_TOLERANCE):
 
-          rospy.logdebug("turnrate=%s", turnrate)
+            xpos = self.control_curr_pos.pose.pose.position.x
+            ypos = self.control_curr_pos.pose.pose.position.y
+            thetapos = self.control_curr_pos.pose.pose.orientation.z
 
-          # move the robot
-          cmd = Twist()
-          cmd.linear.x = 0.0
-          cmd.angular.z = turnrate
-          self.cmd_vel_pub.publish(cmd)
+            terr = td - thetapos
 
-          # wait a timestep before recalculating gains
-          elapsedTime+=settings.TIMESTEP
-          rospy.sleep(settings.TIMESTEP)
+            rospy.logdebug("*** turning...")
+            rospy.logdebug("pos=(%s, %s)", xpos, ypos)
+            rospy.logdebug("theta=%s", thetapos)
+            rospy.logdebug("thdes=%s", td)
+            rospy.logdebug("therr=%s", terr)
+
+            turnrate = settings.ROBOT_LENGTH*settings.A2*terr
+            if (turnrate > settings.MAX_TURNRATE):
+                turnrate = settings.MAX_TURNRATE
+            if (turnrate < -settings.MAX_TURNRATE):
+                turnrate = -settings.MAX_TURNRATE
+
+            rospy.logdebug("turnrate=%s", turnrate)
+
+            # move the robot
+            cmd = Twist()
+            cmd.linear.x = 0.0
+            cmd.angular.z = turnrate
+            self.cmd_vel_pub.publish(cmd)
+
+            # wait a timestep before recalculating gains
+            elapsedTime+=settings.TIMESTEP
+            rospy.sleep(settings.TIMESTEP)
 
 
-      # NOW, MOVE TOWARDS POINT
-      while (math.fabs(xpos-xd) > settings.WAYPOINT_THRESHOLD or 
-              math.fabs(ypos-yd) > settings.WAYPOINT_THRESHOLD):
+        # NOW, MOVE TOWARDS POINT
+        while (math.fabs(xpos-xd) > settings.WAYPOINT_THRESHOLD or
+                math.fabs(ypos-yd) > settings.WAYPOINT_THRESHOLD):
 
-          distToPoint = math.sqrt( (xpos-xd)*(xpos-xd) + (ypos-yd)*(ypos-yd) )
+            distToPoint = math.sqrt( (xpos-xd)*(xpos-xd) + (ypos-yd)*(ypos-yd) )
 
-          xpos = self.control_curr_pos.pose.pose.position.x
-          ypos = self.control_curr_pos.pose.pose.position.y
-          thetapos = self.control_curr_pos.pose.pose.orientation.z
-   
-          xerr = math.sqrt( (xpos - xd)*(xpos - xd) + (ypos - yd)*(ypos - yd) )
-          yerr = (A*xpos + ypos + C)/(math.sqrt(A*A+B*B))
-          td = math.atan2(yd - ypos, xd - xpos)/math.pi
-          terr = td - thetapos
+            xpos = self.control_curr_pos.pose.pose.position.x
+            ypos = self.control_curr_pos.pose.pose.position.y
+            thetapos = self.control_curr_pos.pose.pose.orientation.z
 
-          rospy.logdebug("*** moving...")
-          rospy.logdebug("pos=(%s, %s)", xpos, ypos)
-          rospy.logdebug("des=(%s, %s)", xd, yd)
-          rospy.logdebug("dist=%s", distToPoint)
-          rospy.logdebug("theta=%s", thetapos)
-          rospy.logdebug("thdes=%s", td)
-          rospy.logdebug("therr=%s", terr)
+            xerr = math.sqrt( (xpos - xd)*(xpos - xd) + (ypos - yd)*(ypos - yd) )
+            yerr = (A*xpos + ypos + C)/(math.sqrt(A*A+B*B))
+            td = math.atan2(yd - ypos, xd - xpos)/math.pi
+            terr = td - thetapos
 
-          speed =  settings.LAMBDA * xerr
-          if (speed > settings.MAX_SPEED):
-              speed = settings.MAX_SPEED
+            rospy.logdebug("*** moving...")
+            rospy.logdebug("pos=(%s, %s)", xpos, ypos)
+            rospy.logdebug("des=(%s, %s)", xd, yd)
+            rospy.logdebug("dist=%s", distToPoint)
+            rospy.logdebug("theta=%s", thetapos)
+            rospy.logdebug("thdes=%s", td)
+            rospy.logdebug("therr=%s", terr)
 
-          turnrate = -1 * settings.ROBOT_LENGTH * (settings.A1 * yerr - settings.A2 * terr)
-          if (turnrate > settings.MAX_TURNRATE):
-              turnrate = settings.MAX_TURNRATE
-          if (turnrate < -settings.MAX_TURNRATE):
-              turnrate = -settings.MAX_TURNRATE
+            speed =  settings.LAMBDA * xerr
+            if (speed > settings.MAX_SPEED):
+                speed = settings.MAX_SPEED
 
-          # move the robot
-          cmd = Twist()
-          cmd.linear.x = speed
-          cmd.angular.z = turnrate
-          self.cmd_vel_pub.publish(cmd)
+            turnrate = -1 * settings.ROBOT_LENGTH * (settings.A1 * yerr - settings.A2 * terr)
+            if (turnrate > settings.MAX_TURNRATE):
+                turnrate = settings.MAX_TURNRATE
+            if (turnrate < -settings.MAX_TURNRATE):
+                turnrate = -settings.MAX_TURNRATE
 
-          # wait a timestep before recalculating gains
-          elapsedTime+=settings.TIMESTEP
-          rospy.sleep(settings.TIMESTEP)
+            # move the robot
+            cmd = Twist()
+            cmd.linear.x = speed
+            cmd.angular.z = turnrate
+            self.cmd_vel_pub.publish(cmd)
 
-      rospy.loginfo("Point reached!")
+            # wait a timestep before recalculating gains
+            elapsedTime+=settings.TIMESTEP
+            rospy.sleep(settings.TIMESTEP)
+
+        rospy.loginfo("Point reached!")
 
 
 # Understands how to move around an obstacle, and back on a given path to a Waypoint
 class ObstacleAvoidanceNavigator():
-  def __init__(self):
-    return
+    def __init__(self):
+        return
 
 # Understands how to come in contact with a Cone Waypoint
 class WaypointCaptureNavigator():
-  def __init__(self):
-    return
+    def __init__(self):
+        return
 
 # Moves according to given manual controls
 class ManualControlNavigator():
-  def __init__(self):
-    return
+    def __init__(self):
+        return
 
 
 def get_next_waypoint():
-  rospy.wait_for_service('next_waypoint')
-  try:
-    next_waypoint_service = rospy.ServiceProxy('next_waypoint', GetNextWaypoint)
-    resp = next_waypoint_service('')
-    return resp.waypoint
-  except rospy.ServiceException, e:
-    print "Service call failed: %s"%e
+    rospy.wait_for_service('next_waypoint')
+    try:
+        next_waypoint_service = rospy.ServiceProxy('next_waypoint', GetNextWaypoint)
+        resp = next_waypoint_service('')
+        return resp.waypoint
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
 
 def waypoint_reached(waypoint):
-  rospy.wait_for_service('waypoint_reached')
-  try:
-    waypoint_reached_service = rospy.ServiceProxy('waypoint_reached', WaypointReached)
-    resp = waypoint_reached_service(waypoint)
-    rospy.loginfo(resp)
-    return resp.message
-  except rospy.ServiceException, e:
-    print "Service call failed: %s"%e
+    rospy.wait_for_service('waypoint_reached')
+    try:
+        waypoint_reached_service = rospy.ServiceProxy('waypoint_reached', WaypointReached)
+        resp = waypoint_reached_service(waypoint)
+        rospy.loginfo(resp)
+        return resp.message
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
 
 def main():
-  rospy.init_node('navigation')
-  navigator = TraversalNavigator()
+    rospy.init_node('navigation')
+    navigator = TraversalNavigator()
 
-  response = ''
-  while response != 'No waypoints remaining!':
-    rospy.loginfo("Requesting next waypoint")
-    waypoint = get_next_waypoint()
-    navigator.goToWaypoint(waypoint)
+    response = ''
+    while response != 'No waypoints remaining!':
+        rospy.loginfo("Requesting next waypoint")
+        waypoint = get_next_waypoint()
+        navigator.goToWaypoint(waypoint)
 
-    rospy.loginfo("Marking waypoint as reached")
-    response = waypoint_reached(waypoint)
+        rospy.loginfo("Marking waypoint as reached")
+        response = waypoint_reached(waypoint)
 
-  rospy.loginfo("Done.")
+    rospy.loginfo("Done.")
 
 if __name__ == '__main__':
     try:
