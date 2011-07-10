@@ -26,7 +26,9 @@ import settings
 
 class GpsLocation():
     def __init__(self):
-        self.projection = Proj({'proj':'utm','zone':16,'ellps':'WGS84'})
+        zone = 16
+        rospy.loginfo('projection zone=%d' % zone)
+        self.projection = Proj({'proj':'utm', 'zone':zone, 'ellps':'WGS84'})
         self.init_x = None
         self.init_y = None
         self.publisher = rospy.Publisher('odom', Odometry)
@@ -49,15 +51,19 @@ class GpsLocation():
 
         if self.init_x is None:
             self.init_x,self.init_y = self.lat_lng_to_course_frame(lat,lng)
+            rospy.loginfo('init_x=%f, init_y=%f' % (self.init_x, self.init_y))
 
         x,y = self.lat_lng_to_course_frame(lat,lng)
 
         odom = Odometry()
 
-        odom.pose.pose.position.x = x - self.init_x
-        odom.pose.pose.position.y = y - self.init_y
+        updated_x = x - self.init_x
+        updated_y = y - self.init_y
+        rospy.loginfo('updated_x=%f, updated_y=%f' % (updated_x, updated_y))
+        odom.pose.pose.position.x = updated_x
+        odom.pose.pose.position.y = updated_y
         odom.twist.twist.linear.x = self.knot_to_vel(vel)
-        # TODO convert to radians?
+        # TODO convert to radians? right now it's in degrees. need to check what stage does
         odom.pose.pose.orientation.z = heading
 
         self.publisher.publish(odom)
