@@ -35,24 +35,24 @@ class Mover():
 
         return
 
-	def checkForwardCollision(self):
-		if (self.leftController.forwardCollided or self.leftController.forwardCollision or
-			self.rightController.forwardCollided or self.rightController.forwardCollision):
-			self.leftController.resetForwardCollided()
-			self.rightController.resetForwardCollided()
-			return True
-		else:
-			return False
-			
-	def checkBackwardCollision(self):
-		if (self.leftController.backwardCollided or self.leftController.backwardCollision or
-			self.rightController.backwardCollided or self.rightController.backwardCollision):
-			self.leftController.resetBackwardCollided()
-			self.rightController.resetBackwardCollided()
-			return True
-		else:
-			return False
-			
+    def checkForwardCollision(self):
+        if (self.leftController.forwardCollided or self.leftController.forwardCollision or
+                self.rightController.forwardCollided or self.rightController.forwardCollision):
+                self.leftController.resetForwardCollided()
+                self.rightController.resetForwardCollided()
+                return True
+        else:
+                return False
+                
+    def checkBackwardCollision(self):
+        if (self.leftController.backwardCollided or self.leftController.backwardCollision or
+                self.rightController.backwardCollided or self.rightController.backwardCollision):
+                self.leftController.resetBackwardCollided()
+                self.rightController.resetBackwardCollided()
+                return True
+        else:
+                return False
+
     def move(self, movement):
         """
                 movement is expected to contain the three values from the Move message
