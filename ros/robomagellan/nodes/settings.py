@@ -44,6 +44,7 @@ A2=1
 # GPS module
 # TODO: figure out LAT_OFFSET and LNG_OFFSET
 #
+UTM_ZONE=34
 LAT_OFFSET = 0.0056
 LNG_OFFSET = -0.2683
 

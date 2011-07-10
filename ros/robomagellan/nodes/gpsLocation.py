@@ -26,9 +26,8 @@ import settings
 
 class GpsLocation():
     def __init__(self):
-        zone = 16
-        rospy.loginfo('projection zone=%d' % zone)
-        self.projection = Proj({'proj':'utm', 'zone':zone, 'ellps':'WGS84'})
+        rospy.loginfo('projection zone=%d' % settings.UTM_ZONE)
+        self.projection = Proj({'proj':'utm', 'zone':settings.UTM_ZONE, 'ellps':'WGS84'})
         self.init_x = None
         self.init_y = None
         self.publisher = rospy.Publisher('odom', Odometry)
