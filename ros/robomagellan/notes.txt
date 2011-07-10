@@ -13,6 +13,9 @@ test waypoint-touching code:
  - ???
 
 
+TODO add header to all messages
+
+
 top-tier
  waypoints service node
    - takes in a list of ORDERED gps waypoints listed in a file

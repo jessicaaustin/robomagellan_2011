@@ -3,8 +3,6 @@
 # all parameters are in SI units (meters, m/s, etc)
 #
 
-TEST_MODE = False
-
 #
 # robot parameters
 #
@@ -13,6 +11,11 @@ ROBOT_LENGTH=.64
 # maximum speed and turnrate allowed for the robot
 MAX_SPEED=1
 MAX_TURNRATE=1
+
+#
+# constants
+#
+KNOT_TO_M_S = 0.514444444
 
 #
 # General parameters for navigation algorithm
@@ -39,6 +42,7 @@ A2=1
 
 #
 # GPS module
+# TODO: figure out LAT_OFFSET and LNG_OFFSET
 #
 LAT_OFFSET = 0.0056
 LNG_OFFSET = -0.2683

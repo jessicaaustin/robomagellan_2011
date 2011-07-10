@@ -6,9 +6,6 @@
 # Uses pyproj to convert geographic coords (lat,lng) to local map coords (x,y)
 #   see http://code.google.com/p/pyproj/
 #
-# TODO: make this a class
-# TODO: figure out LAT_OFFSET and LNG_OFFSET
-#
 
 import roslib; roslib.load_manifest('robomagellan')
 
@@ -26,56 +23,57 @@ from std_msgs.msg import String
 
 import settings
 
-# constants
-KNOT_TO_M_S = 0.514444444
 
-projection = Proj({'proj':'utm','zone':16,'ellps':'WGS84'})
-init_x = None
-init_y = None
+class GpsLocation():
+    def __init__(self):
+        self.projection = Proj({'proj':'utm','zone':16,'ellps':'WGS84'})
+        self.init_x = None
+        self.init_y = None
+        self.publisher = rospy.Publisher('odom', Odometry)
 
-def knot_to_vel(num):
-    return KNOT_TO_M_S * num
+    def knot_to_vel(self, num):
+        return settings.KNOT_TO_M_S * num
 
-def lat_lng_to_course_frame(lat,lng):
-    return projection(lat,lng)
+    def lat_lng_to_course_frame(self, lat,lng):
+        return self.projection(lat,lng)
 
-def publish_location(nmea_str, publisher):
-    nmea_arr = nmea_str.split(",")
-    lat = (float(nmea_arr[3]) / 100) + settings.LAT_OFFSET
-    lng = (-1 * float(nmea_arr[5]) / 100) + settings.LNG_OFFSET
-    vel = float(nmea_arr[7])
-    heading = float(nmea_arr[8])
+    def publish_location(self, nmea_str):
+        nmea_arr = nmea_str.split(",")
+        lat = (float(nmea_arr[3]) / 100) + settings.LAT_OFFSET
+        lng = (-1 * float(nmea_arr[5]) / 100) + settings.LNG_OFFSET
+        vel = float(nmea_arr[7])
+        heading = float(nmea_arr[8])
 
-    rospy.loginfo('lat,lng=(%f,%f)' % (lat,lng))
-    rospy.loginfo('vel=%f,heading=%f' % (vel,heading))
+        rospy.logdebug('lat,lng=(%f,%f)' % (lat,lng))
+        rospy.logdebug('vel=%f,heading=%f' % (vel,heading))
 
-    global init_x
-    global init_y
-    if init_x is None:
-        init_x,init_y = lat_lng_to_course_frame(lat,lng)
+        if self.init_x is None:
+            self.init_x,self.init_y = self.lat_lng_to_course_frame(lat,lng)
 
-    x,y = lat_lng_to_course_frame(lat,lng)
+        x,y = self.lat_lng_to_course_frame(lat,lng)
 
-    odom = Odometry()
+        odom = Odometry()
 
-    odom.pose.pose.position.x = x - init_x
-    odom.pose.pose.position.y = y - init_y
-    odom.twist.twist.linear.x = knot_to_vel(vel)
-    # TODO convert to radians?
-    odom.pose.pose.orientation.z = heading
+        odom.pose.pose.position.x = x - self.init_x
+        odom.pose.pose.position.y = y - self.init_y
+        odom.twist.twist.linear.x = self.knot_to_vel(vel)
+        # TODO convert to radians?
+        odom.pose.pose.orientation.z = heading
 
-    #rospy.loginfo(odom)
-    publisher.publish(odom)
+        self.publisher.publish(odom)
 
 
-CMD = 'gpsbabel -T -i garmin -f usb: -o nmea -F -'
-if settings.TEST_MODE:
-    CMD = os.getcwd() + '/../test/gpsbabel'
+if __name__ == '__main__':
+    CMD = 'gpsbabel -T -i garmin -f usb: -o nmea -F -'
+    if len(sys.argv) > 1:
+        CMD = sys.argv[1]
+    
+    rospy.loginfo('Running gps with command: %s' % CMD)
 
-def main():
-    pub = rospy.Publisher('odom', Odometry)
-    pub_raw = rospy.Publisher('gps_raw_data', String)
     rospy.init_node('gps_location')
+    gps_location = GpsLocation()
+    pub_raw = rospy.Publisher('gps_raw_data', String)
+
     p = Popen(CMD, stdout = PIPE, stderr = STDOUT, shell = True)
     while not rospy.is_shutdown():
         line = p.stdout.readline()
@@ -84,9 +82,5 @@ def main():
             break
         pub_raw.publish(line)
         if "GPRMC" in line:
-            publish_location(line, pub)
+            gps_location.publish_location(line)
 
-if __name__ == '__main__':
-    try:
-        main()
-    except rospy.ROSInterruptException: pass
