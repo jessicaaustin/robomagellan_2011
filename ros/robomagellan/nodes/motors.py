@@ -7,13 +7,13 @@ from robomagellan.msg import Move, Collision
 motors = MotionMindPair.Mover()
 
 def checkForCollision():
-	collisionState.forwardCollision = motors.checkForwardCollision()
-	collisionState.backwardCollision = motors.checkBackwardCollision()
-
-	if (collisionState.forwardCollision or collisionState.backwardCollision):
-		publisher.publish(collisionState)
-
-	return
+    collisionState.forwardCollision = motors.checkForwardCollision()
+    collisionState.backwardCollision = motors.checkBackwardCollision()
+    
+    if (collisionState.forwardCollision or collisionState.backwardCollision):
+        publisher.publish(collisionState)
+    
+    return
 
 def callback(moveMessage):
     rospy.logdebug(rospy.get_name() + ' Left: %d, Right: %d, RampUp: %d',
@@ -21,11 +21,11 @@ def callback(moveMessage):
             moveMessage.rightWheel,
             moveMessage.rampUp)
 
-	checkForCollision()
-	motors.move((moveMessage.leftWheel,
-				 moveMessage.rightWheel,
-				 moveMessage.rampUp))
-	checkForCollision()
+    checkForCollision()
+    motors.move((moveMessage.leftWheel,
+    			 moveMessage.rightWheel,
+    			 moveMessage.rampUp))
+    checkForCollision()
 
 
 def controlMotors():
@@ -36,6 +36,6 @@ def controlMotors():
     rospy.spin()
 
 if __name__ == '__main__':
-	publisher = rospy.Publisher('collisionTopic', Collision)
-	collisionState = Collision()
-	controlMotors()
+    publisher = rospy.Publisher('collisionTopic', Collision)
+    collisionState = Collision()
+    controlMotors()
