@@ -12,13 +12,7 @@ class CollisionPublisher():
 
     def publish_collision(self, forward_collision, backward_collision):
         c = Collision()
-        if forward_collision:
-            c.forwardCollision = 'Y'
-        else:
-            c.forwardCollision = 'N'
-        if backward_collision:
-            c.backwardCollision = 'Y'
-        else:
-            c.backwardCollision = 'N'
+        c.forwardCollision = forward_collision
+        c.backwardCollision = backward_collision
         self.publisher.publish(c)
 

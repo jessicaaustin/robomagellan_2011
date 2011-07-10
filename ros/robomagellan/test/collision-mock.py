@@ -25,7 +25,6 @@ from nav_msgs.msg import Odometry
 import math
 import settings
 
-from MotionMindPair import CollisionPublisher
 
 class CollisionMock():
     def __init__(self):

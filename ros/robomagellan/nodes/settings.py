@@ -3,6 +3,8 @@
 # all parameters are in SI units (meters, m/s, etc)
 #
 
+TEST_MODE = True
+
 #
 # robot parameters
 #
@@ -35,6 +37,11 @@ A1=2
 # feedback proportional to angular (theta) error
 A2=1
 
+#
+# GPS module
+#
+LAT_OFFSET = 0.0056
+LNG_OFFSET = -0.2683
 
 #
 # testing

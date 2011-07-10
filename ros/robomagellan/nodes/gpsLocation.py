@@ -7,7 +7,6 @@
 #   see http://code.google.com/p/pyproj/
 #
 # TODO: make this a class
-#   like this: http://nullege.com/codes/show/src%40i%40r%40irobot_400_series-HEAD%40bin%40driver.py/
 # TODO: figure out LAT_OFFSET and LNG_OFFSET
 #
 
@@ -25,11 +24,10 @@ from geometry_msgs.msg import Vector3
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
+import settings
+
 # constants
-TEST_MODE = False
 KNOT_TO_M_S = 0.514444444
-LAT_OFFSET = 0.0056
-LNG_OFFSET = -0.2683
 
 projection = Proj({'proj':'utm','zone':16,'ellps':'WGS84'})
 init_x = None
@@ -43,8 +41,8 @@ def lat_lng_to_course_frame(lat,lng):
 
 def publish_location(nmea_str, publisher):
     nmea_arr = nmea_str.split(",")
-    lat = (float(nmea_arr[3]) / 100) + LAT_OFFSET
-    lng = (-1 * float(nmea_arr[5]) / 100) + LNG_OFFSET
+    lat = (float(nmea_arr[3]) / 100) + settings.LAT_OFFSET
+    lng = (-1 * float(nmea_arr[5]) / 100) + settings.LNG_OFFSET
     vel = float(nmea_arr[7])
     heading = float(nmea_arr[8])
 
@@ -71,7 +69,7 @@ def publish_location(nmea_str, publisher):
 
 
 CMD = 'gpsbabel -T -i garmin -f usb: -o nmea -F -'
-if TEST_MODE:
+if settings.TEST_MODE:
     CMD = os.getcwd() + '/../test/gpsbabel'
 
 def main():
