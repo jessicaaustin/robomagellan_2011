@@ -3,4 +3,6 @@
 	<node name="gpsLocation" pkg="robomagellan" type="gpsLocation.py" respawn="false" />
 	<node name="acceleration" pkg="robomagellan" type="acceleration.py" respawn="false" />
 	<node name="motors" pkg="robomagellan" type="motors.py" respawn="false" />
+	<node name="acceleration" pkg="robomagellan" type="acceleration.py" respawn="true" />
+	<node name="motors" pkg="robomagellan" type="motors.py" respawn="true" />
 </launch>
