@@ -53,7 +53,7 @@ def collisionCallback(collisionMessage):
                    collisionMessage.forwardCollision,
                    collisionMessage.backwardCollision)
 
-    if (collisionMessage.forwardCollision == 'Y'):
+    if (collisionMessage.forwardCollision):
         publisher.publish(stopCommand)
         publisher.publish(backCommand)
 
@@ -62,7 +62,7 @@ def controlMotors():
     rospy.loginfo(rospy.get_name() + ' Started')
     rospy.Subscriber("rangeTopic", Range, rangeCallback)
     rospy.Subscriber("gyroTopic", Gyro, gyroCallback)
-    rospy.Subscriber("collisionTopic", Collision, collisionCallback)
+    rospy.Subscriber("collision", Collision, collisionCallback)
     rospy.spin()
 
 if __name__ == '__main__':

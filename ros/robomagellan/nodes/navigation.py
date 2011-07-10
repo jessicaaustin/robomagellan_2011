@@ -268,7 +268,7 @@ class WaypointCaptureNavigator():
         
         # loop until we've reached the cone
         while not rospy.is_shutdown():
-            if self.collision.forwardCollision == 'Y' or self.collision.backwardCollision == 'Y':
+            if self.collision.forwardCollision or self.collision.backwardCollision:
                 rospy.loginfo("WaypointCaptureNavigator: Cone reached")
                 navigator.stop()
                 rospy.sleep(1.0)

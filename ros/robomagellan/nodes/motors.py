@@ -36,6 +36,6 @@ def controlMotors():
     rospy.spin()
 
 if __name__ == '__main__':
-    publisher = rospy.Publisher('collisionTopic', Collision)
+    publisher = rospy.Publisher('collision', Collision)
     collisionState = Collision()
     controlMotors()
