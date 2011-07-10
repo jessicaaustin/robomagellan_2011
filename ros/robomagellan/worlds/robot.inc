@@ -36,7 +36,6 @@ define robot position
   obstacle_return 1
 
   # TODO add other sensors
-  # TODO get proper position of lasers
   parallaxping(pose [ 0.220 0.085 -0.390 0.000 ])
 )
 

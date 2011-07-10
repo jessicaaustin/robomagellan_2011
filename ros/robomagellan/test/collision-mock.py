@@ -6,6 +6,8 @@
 #
 # For simulation purposes only
 #
+# TODO: have this read in the worlds file, so we can mimic gps being off
+#
 
 import roslib; roslib.load_manifest('robomagellan')
 

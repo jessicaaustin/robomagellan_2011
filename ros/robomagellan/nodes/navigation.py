@@ -72,7 +72,7 @@ class Navigator(threading.Thread):
             return
 
         if self.waypoint == None or self.waypoint_threshold == None:
-            rospy.logerror('set waypoint before running Navigator!')
+            rospy.logerr('set waypoint before running Navigator!')
             return
 
         # loop until we get a lock on our position
@@ -241,6 +241,7 @@ class ObstacleAvoidanceNavigator():
         return
 
 # Understands how to come in contact with a Cone Waypoint
+# TODO: integrate camera data into this
 class WaypointCaptureNavigator():
     def __init__(self):
         rospy.loginfo('WaypointReached: init')

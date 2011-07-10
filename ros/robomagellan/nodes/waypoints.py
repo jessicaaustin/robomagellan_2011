@@ -15,11 +15,16 @@ from robomagellan.msg import *
 import rospy
 from geometry_msgs.msg import Point
 
+import os
+import sys
+
 class WaypointServer():
     def __init__(self):
-        self.waypoints = self.read_waypoints_from_file()
         self.current_index = 0
         return
+
+    def set_waypoints(self, waypoints):
+        self.waypoints = waypoints
 
     def current_waypoint(self):
         return self.waypoints[self.current_index]
@@ -31,12 +36,23 @@ class WaypointServer():
         self.current_index += 1
         return ("Waypoint reached! %d waypoints remaining" % (len(self.waypoints) - self.current_index))
 
-    # TODO actually read from file
-    def read_waypoints_from_file(self):
-        return [Waypoint('P', Point(1.0, 1.0, 0)),
-                Waypoint('C', Point(5.0, 10.0, 0)),
-                Waypoint('P', Point(25.0, 10.0, 0)),
-                Waypoint('P', Point(12.0, 25.0, 0))]
+
+class WaypointFileReader():
+    def __init__(self):
+        return
+    
+    # TODO convert from GPS to course frame when reading from file
+    def read_file(self, filename):
+        rospy.loginfo('Reading waypoints from file %s' % filename)
+        waypoints = []
+        file = open(filename)
+        line = file.readline()
+        while len(line) > 0:
+            args = line.split()
+            waypoints.append(Waypoint(args[0], Point(float(args[1]), float(args[2]), 0.0)))
+            line = file.readline() 
+        rospy.loginfo('Waypoints: \n%s' % waypoints)
+        return waypoints
 
 
 def handle_waypoint_reached(server):
@@ -49,13 +65,19 @@ def handle_next_waypoint(server):
         return server.current_waypoint()
     return get_current_waypoint_from_server
 
-def waypoints_server():
+def waypoints_server(waypoints_file):
     rospy.init_node('waypoints_server')
     server = WaypointServer()
+    waypoints = WaypointFileReader().read_file(waypoints_file)
+    server.set_waypoints(waypoints)
     rospy.Service('next_waypoint', GetNextWaypoint, handle_next_waypoint(server))
     rospy.Service('waypoint_reached', WaypointReached, handle_waypoint_reached(server))
     rospy.loginfo('ready')
     rospy.spin()
 
 if __name__ == "__main__":
-    waypoints_server()
+    if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]) or not os.path.isfile(sys.argv[1]):
+        rospy.logerr('Must supply waypoints file!')
+    else:
+        waypoints_file = sys.argv[1]
+        waypoints_server(waypoints_file)
