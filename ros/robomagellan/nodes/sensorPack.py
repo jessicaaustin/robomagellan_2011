@@ -51,23 +51,21 @@ def processNextSensorMessage(source):
 
             except:
                 print sys.exc_info()[0]
-                rospy.loginfo('Unable to publish Gyro message')
+                rospy.logerr('Unable to publish Gyro message')
 
     elif messageFields[0] == 'Rg':
         if len(messageFields) == 2:
             currentRange.rangeInCm = int(messageFields[1])
-            if currentRange.rangeInCm > 110:
-                return
 
             try:
                 rangePublisher.publish(currentRange)
 
             except:
                 print sys.exc_info()[0]
-                rospy.loginfo('Unable to publish Range message')
+                rospy.logerr('Unable to publish Range message')
 
     else:
-        rospy.loginfo('Unable to parse sensor message')
+        rospy.logerr('Unable to parse sensor message')
 
     return
 
@@ -81,7 +79,7 @@ def sensorPack():
 
         except:
             print sys.exc_info()[0]
-            rospy.loginfo('Unable to get sensor data')
+            rospy.logerr('Unable to get sensor data')
 
         time.sleep(0.5)
 
