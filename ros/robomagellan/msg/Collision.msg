@@ -1,9 +1,9 @@
 Header header
 #
 # each of the members is either Y or N, to indicate
-# whether the robot currently reports and active
-# collission condition
+# whether the robot currently reports an active
+# collision condition
 #
-string forwardCollision
-string backwardCollision
+bool forwardCollision
+bool backwardCollision
 
