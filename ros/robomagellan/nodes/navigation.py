@@ -10,6 +10,7 @@ import roslib; roslib.load_manifest('robomagellan')
 
 import sys
 import math
+import threading
 
 import rospy
 from geometry_msgs.msg import Twist
@@ -22,35 +23,53 @@ from robomagellan.msg import *
 
 import settings
 
-# Understands how to go to a given Waypoint, assuming no obstacles
-# Uses proportional control for correction
-class TraversalNavigator():
+# Understands how to move to a given point
+# Runs on a thread, and continues until stop() is called on it
+class Navigator(threading.Thread):
     def __init__(self):
-        self.control_curr_pos = None
+        # setup thread listener
+        super(Navigator, self).__init__()
+        self._stop = threading.Event()
+        # setup /cmd_vel publisher
         self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist)
-        return
+        # start listening for the current position
+        self.control_curr_pos = None
+        rospy.Subscriber('odom', Odometry, self.setup_odom_callback())
+
+    def stop (self):
+        self._stop.set()
+
+    def stopped (self):
+        return self._stop.isSet() or rospy.is_shutdown()
 
     def setup_odom_callback(self):
         def odom_callback(data):
             self.control_curr_pos = data
         return odom_callback
 
-    def goToWaypoint(self, waypoint):
+    def set_waypoint(self, waypoint, waypoint_threshold):
+        self.waypoint = waypoint
+        self.waypoint_threshold = waypoint_threshold
 
-        # start listening for the current position
-        rospy.Subscriber('odom', Odometry, self.setup_odom_callback())
-
-        while not rospy.is_shutdown():
+    # Travel from the current robot position to the given waypoint.
+    def run(self):
+        if self.waypoint == None or self.waypoint_threshold == None:
+            rospy.logerror('set waypoint before running Navigator!')
+            return
+        # loop until we get a lock on our position
+        while not self.stopped():
             if self.control_curr_pos != None:
-                self.move_to_point(waypoint)
+                self.move_to_point(self.waypoint, self.waypoint_threshold)
                 return
             else:
                 # wait 1 second
-                rospy.loginfo("Waiting for current position...")
+                rospy.loginfo("Navigator: Waiting for current position...")
                 rospy.sleep(1.0)
 
-    def move_to_point(self, waypoint):
-        rospy.loginfo("Moving to location: (%s)", waypoint)
+    # Travel from the current robot position to the given waypoint.
+    # Uses proportional control for correction
+    def move_to_point(self, waypoint, waypoint_threshold):
+        rospy.loginfo("Navigator: Moving to location: (%s)", waypoint)
 
         # initial position
         xpos = self.control_curr_pos.pose.pose.position.x
@@ -67,9 +86,10 @@ class TraversalNavigator():
         yd = waypoint.coordinate.y
         td = math.atan2(yd-yi, xd-xi)/math.pi
 
-        if (math.fabs(xpos-xd) < settings.WAYPOINT_THRESHOLD and
-            math.fabs(ypos-yd) < settings.WAYPOINT_THRESHOLD):
-            rospy.loginfo("Point reached!")
+        # check and see if we're already there
+        if (math.fabs(xpos-xd) < waypoint_threshold and
+            math.fabs(ypos-yd) < waypoint_threshold):
+            rospy.loginfo("Navigator: Point reached!")
             return
 
         # error in lateral and longitudinal distances
@@ -86,7 +106,7 @@ class TraversalNavigator():
         C = slope * xd - yd
 
         # FIRST, TURN ON THE SPOT
-        while (math.fabs(thetapos - td) > settings.THETA_TOLERANCE):
+        while (math.fabs(thetapos - td) > settings.THETA_TOLERANCE and not self.stopped()):
 
             xpos = self.control_curr_pos.pose.pose.position.x
             ypos = self.control_curr_pos.pose.pose.position.y
@@ -120,8 +140,9 @@ class TraversalNavigator():
 
 
         # NOW, MOVE TOWARDS POINT
-        while (math.fabs(xpos-xd) > settings.WAYPOINT_THRESHOLD or
-                math.fabs(ypos-yd) > settings.WAYPOINT_THRESHOLD):
+        while ((math.fabs(xpos-xd) > waypoint_threshold or
+                math.fabs(ypos-yd) > waypoint_threshold) and 
+                not self.stopped()):
 
             distToPoint = math.sqrt( (xpos-xd)*(xpos-xd) + (ypos-yd)*(ypos-yd) )
 
@@ -162,7 +183,30 @@ class TraversalNavigator():
             elapsedTime+=settings.TIMESTEP
             rospy.sleep(settings.TIMESTEP)
 
-        rospy.loginfo("Point reached!")
+        rospy.loginfo("Navigator: Point reached!")
+
+
+# Understands how to go to a given Waypoint, assuming no obstacles
+# If the waypoint is a Cone waypoint, it will return control when it is sufficiently
+# close to use the camera. Otherwise, it will return control when it has reached
+# the waypoint.
+class TraversalNavigator(threading.Thread):
+    def __init__(self):
+        rospy.loginfo('TraversalNavigator: init')
+
+    # Go towards a waypoint until it's been reached
+    def goToWaypoint(self, waypoint):
+        rospy.loginfo('TraversalNavigator: moving to waypoint %s' % waypoint)
+        waypoint_threshold = settings.WAYPOINT_THRESHOLD
+        if waypoint.type == 'C':
+            waypoint_threshold = settings.WAYPOINT_DIST
+
+        # start moving towards the point, on another thread
+        navigator = Navigator()
+        navigator.set_waypoint(waypoint, waypoint_threshold)
+        navigator.start()
+        # return whenever the navigator is done
+        navigator.join()
 
 
 # Understands how to move around an obstacle, and back on a given path to a Waypoint
@@ -173,7 +217,37 @@ class ObstacleAvoidanceNavigator():
 # Understands how to come in contact with a Cone Waypoint
 class WaypointCaptureNavigator():
     def __init__(self):
+        rospy.loginfo('WaypointReached: init')
+        self.collision = Collision()
+        self.collision.forwardCollision = 'N'
+        self.collision.backwardCollision = 'N'
+        # start listening for a collision
+        rospy.Subscriber("collision", Collision, self.create_collision_callback()) 
         return
+
+    def create_collision_callback(self):
+        def collision_callback(data):
+            self.collision = data
+        return collision_callback
+
+    # Go towards a waypoint until the /collision topic reports a hit
+    def goToWaypoint(self, waypoint):
+        rospy.loginfo('WaypointCaptureNavigator: capturing waypoint %s' % waypoint)
+
+        # start moving towards the point, on another thread
+        navigator = Navigator()
+        navigator.set_waypoint(waypoint, 0)
+        navigator.start()
+        
+        # loop until we've reached the cone
+        while not rospy.is_shutdown():
+            if self.collision.forwardCollision == 'Y' or self.collision.backwardCollision == 'Y':
+                rospy.loginfo("WaypointCaptureNavigator: Cone reached")
+                navigator.stop()
+                return
+            rospy.sleep(0.1)
+        # stop the navigator if we got a shutdown
+        navigator.stop()
 
 # Moves according to given manual controls
 class ManualControlNavigator():
@@ -202,13 +276,18 @@ def waypoint_reached(waypoint):
 
 def main():
     rospy.init_node('navigation')
-    navigator = TraversalNavigator()
+    traversal_navigator = TraversalNavigator()
+    capture_navigator = WaypointCaptureNavigator()
 
     response = ''
     while response != 'No waypoints remaining!':
         rospy.loginfo("Requesting next waypoint")
         waypoint = get_next_waypoint()
-        navigator.goToWaypoint(waypoint)
+        traversal_navigator.goToWaypoint(waypoint)
+
+        # waypoint reached! if it's a cone let's capture it
+        if waypoint.type == 'C':
+            capture_navigator.goToWaypoint(waypoint)
 
         rospy.loginfo("Marking waypoint as reached")
         response = waypoint_reached(waypoint)

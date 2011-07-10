@@ -9,7 +9,6 @@ class CollisionPublisher():
     def __init__(self):
         rospy.loginfo("initialzing CollisionPublisher")
         self.publisher = rospy.Publisher('collision', Collision)
-#        rospy.init_node('collision_publisher')
 
     def publish_collision(self, forward_collision, backward_collision):
         c = Collision()
