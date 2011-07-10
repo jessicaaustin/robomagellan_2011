@@ -5,8 +5,6 @@
 
 import roslib; roslib.load_manifest('robomagellan')
 
-from CollisionPublisher import *
-
 import rospy
 from std_msgs.msg import String
 
@@ -19,7 +17,7 @@ synchronizer = threading.Event()
 
 class Mover():
     def __init__(self):
-        rospy.loginfo("initialzing Mover")
+        rospy.logdebug("initialzing Mover")
         """
          start a thread for each MotionMind controller and then
          enter a loop reading commands, sending them to the controller
@@ -37,17 +35,25 @@ class Mover():
 
         return
 
-    def checkForwardCollision(self):
-        if (self.leftController.forwardCollided or self.leftController.forwardCollision or
-                self.rightController.forwardCollided or self.rightController.forwardCollision):
-            self.leftController.resetForwardCollided()
-            self.rightController.resetForwardCollided()
-            return True
-        else:
-            return False
-
+	def checkForwardCollision(self):
+		if (self.leftController.forwardCollided or self.leftController.forwardCollision or
+			self.rightController.forwardCollided or self.rightController.forwardCollision):
+			self.leftController.resetForwardCollided()
+			self.rightController.resetForwardCollided()
+			return True
+		else:
+			return False
+			
+	def checkBackwardCollision(self):
+		if (self.leftController.backwardCollided or self.leftController.backwardCollision or
+			self.rightController.backwardCollided or self.rightController.backwardCollision):
+			self.leftController.resetBackwardCollided()
+			self.rightController.resetBackwardCollided()
+			return True
+		else:
+			return False
+			
     def move(self, movement):
-
         """
                 movement is expected to contain the three values from the Move message
         """
@@ -63,7 +69,7 @@ class Mover():
 
 class MotionMind(threading.Thread):
     def __init__(self, name, serialPort, address, commandQueue):
-        rospy.loginfo("initialzing MotionMind")
+        rospy.logdebug("initialzing MotionMind")
         
         threading.Thread.__init__(self)
 
@@ -74,7 +80,6 @@ class MotionMind(threading.Thread):
         self.forwardCollided = False
         self.backwardCollision = False
         self.backwardCollided = False
-        self.collisionPublisher = CollisionPublisher()
         self.intervalDelay = 1.0
         self.serialPort = serial.Serial(port = serialPort,
                                                                         baudrate = 9600,
@@ -84,13 +89,13 @@ class MotionMind(threading.Thread):
         self.address = address
         # set all of the PID parameters
         self.sendCommand("W%s 04 10000" % (self.address))# P gain
-        rospy.loginfo(self.readResponse())
+        rospy.logdebug(self.readResponse())
         self.sendCommand("W%s 05 0" % (self.address))    # I gain
-        rospy.loginfo(self.readResponse())
+        rospy.logdebug(self.readResponse())
         self.sendCommand("W%s 06 0" % (self.address))    # D gain
-        rospy.loginfo(self.readResponse())
+        rospy.logdebug(self.readResponse())
         self.sendCommand("W%s 08 10000" % (self.address))# PID scalar
-        rospy.loginfo(self.readResponse())
+        rospy.logdebug(self.readResponse())
 
         return
 
@@ -103,8 +108,8 @@ class MotionMind(threading.Thread):
         self.serialPort.flushInput()
         self.sendCommand("R%s 16" % (self.address))
         response = self.readResponse()
-        rospy.loginfo(self.address)
-        rospy.loginfo(response)
+        rospy.logdebug(self.address)
+        rospy.logdebug(response)
 
         if (self.name == "left"):
             forwardCollisionBit = 2
@@ -126,7 +131,6 @@ class MotionMind(threading.Thread):
         else:
             self.backwardCollision = False
 
-        self.collisionPublisher.publish_collision(self.forwardCollision, self.backwardCollision)
         return
 
     def run(self):
