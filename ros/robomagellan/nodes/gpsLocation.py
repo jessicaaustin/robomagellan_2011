@@ -58,7 +58,7 @@ class GpsLocation():
 
         updated_x = x - self.init_x
         updated_y = y - self.init_y
-        rospy.loginfo('updated_x=%f, updated_y=%f' % (updated_x, updated_y))
+        rospy.logdebug('updated_x=%f, updated_y=%f' % (updated_x, updated_y))
         odom.pose.pose.position.x = updated_x
         odom.pose.pose.position.y = updated_y
         odom.twist.twist.linear.x = self.knot_to_vel(vel)
