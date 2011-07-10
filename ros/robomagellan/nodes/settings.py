@@ -3,7 +3,7 @@
 # all parameters are in SI units (meters, m/s, etc)
 #
 
-TEST_MODE = True
+TEST_MODE = False
 
 #
 # robot parameters
