@@ -2,6 +2,7 @@
 #
 # Subscribes to:
 #  /odom
+#  /collision
 # Publishes to:
 #  /cmd_vel
 #
@@ -25,6 +26,7 @@ import settings
 
 # Understands how to move to a given point
 # Runs on a thread, and continues until stop() is called on it
+# TODO fix bug when moving to 3rd quadrant
 class Navigator(threading.Thread):
     def __init__(self):
         # setup thread listener
@@ -35,6 +37,9 @@ class Navigator(threading.Thread):
         # start listening for the current position
         self.control_curr_pos = None
         rospy.Subscriber('odom', Odometry, self.setup_odom_callback())
+        self.waypoint = None
+        self.waypoint_threshold = None
+        self.backwards = None
 
     def stop (self):
         self._stop.set()
@@ -47,15 +52,29 @@ class Navigator(threading.Thread):
             self.control_curr_pos = data
         return odom_callback
 
+    def publish_cmd_vel(self, x, z):
+        cmd = Twist()
+        cmd.linear.x = x
+        cmd.angular.z = z
+        self.cmd_vel_pub.publish(cmd)
+
     def set_waypoint(self, waypoint, waypoint_threshold):
         self.waypoint = waypoint
         self.waypoint_threshold = waypoint_threshold
 
+    def set_backwards(self, backwards):
+        self.backwards = backwards
+
     # Travel from the current robot position to the given waypoint.
     def run(self):
+        if self.backwards:
+            self.move_backwards()
+            return
+
         if self.waypoint == None or self.waypoint_threshold == None:
             rospy.logerror('set waypoint before running Navigator!')
             return
+
         # loop until we get a lock on our position
         while not self.stopped():
             if self.control_curr_pos != None:
@@ -129,10 +148,7 @@ class Navigator(threading.Thread):
             rospy.logdebug("turnrate=%s", turnrate)
 
             # move the robot
-            cmd = Twist()
-            cmd.linear.x = 0.0
-            cmd.angular.z = turnrate
-            self.cmd_vel_pub.publish(cmd)
+            self.publish_cmd_vel(0.0, turnrate)
 
             # wait a timestep before recalculating gains
             elapsedTime+=settings.TIMESTEP
@@ -174,17 +190,26 @@ class Navigator(threading.Thread):
                 turnrate = -settings.MAX_TURNRATE
 
             # move the robot
-            cmd = Twist()
-            cmd.linear.x = speed
-            cmd.angular.z = turnrate
-            self.cmd_vel_pub.publish(cmd)
+            self.publish_cmd_vel(speed, turnrate)
 
             # wait a timestep before recalculating gains
             elapsedTime+=settings.TIMESTEP
             rospy.sleep(settings.TIMESTEP)
 
         rospy.loginfo("Navigator: Point reached!")
+        return
 
+    # move backwards a bit. useful for re-orientation after encountering an obstacle
+    def move_backwards(self):
+        rospy.loginfo('Navigator: move_backwards')
+        time_moved = 0
+        while not self.stopped() and time_moved < settings.BACKWARDS_TIME:
+            self.publish_cmd_vel(-1 * settings.MAX_SPEED, 0.0)
+            time_moved += settings.TIMESTEP
+            rospy.sleep(settings.TIMESTEP)
+        self.publish_cmd_vel(0.0, 0.0)
+        return
+         
 
 # Understands how to go to a given Waypoint, assuming no obstacles
 # If the waypoint is a Cone waypoint, it will return control when it is sufficiently
@@ -210,6 +235,7 @@ class TraversalNavigator(threading.Thread):
 
 
 # Understands how to move around an obstacle, and back on a given path to a Waypoint
+# TODO implement
 class ObstacleAvoidanceNavigator():
     def __init__(self):
         return
@@ -244,12 +270,22 @@ class WaypointCaptureNavigator():
             if self.collision.forwardCollision == 'Y' or self.collision.backwardCollision == 'Y':
                 rospy.loginfo("WaypointCaptureNavigator: Cone reached")
                 navigator.stop()
+                rospy.sleep(1.0)
+                
+                # move backwards to clear ourselves of the cone
+                navigator = Navigator()
+                navigator.move_backwards()
                 return
-            rospy.sleep(0.1)
+            else:
+                rospy.sleep(0.1)
+
         # stop the navigator if we got a shutdown
         navigator.stop()
+        return
+
 
 # Moves according to given manual controls
+# TODO implement
 class ManualControlNavigator():
     def __init__(self):
         return

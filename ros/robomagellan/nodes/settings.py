@@ -20,6 +20,8 @@ MAX_TURNRATE=1
 WAYPOINT_DIST=3
 # how close we have to be to an intermediate waypoint to consider to have reached it
 WAYPOINT_THRESHOLD=.5
+# how long to move backwards when backing away from an obstacle
+BACKWARDS_TIME=1
 
 # parameters for the point-to-point controller
 # these can be tweaked to improve performance
