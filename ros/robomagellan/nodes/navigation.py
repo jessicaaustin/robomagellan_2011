@@ -18,6 +18,7 @@ from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Vector3
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
+from tf.transformations import euler_from_quaternion
 
 from robomagellan.srv import *
 from robomagellan.msg import *
@@ -58,6 +59,11 @@ class Navigator(threading.Thread):
         cmd.angular.z = z
         self.cmd_vel_pub.publish(cmd)
 
+    def current_yaw(self):
+        q = self.control_curr_pos.pose.pose.orientation
+        euler = euler_from_quaternion([q.x, q.y, q.z, q.w])
+        return euler[2]
+
     def set_waypoint(self, waypoint, waypoint_threshold):
         self.waypoint = waypoint
         self.waypoint_threshold = waypoint_threshold
@@ -93,7 +99,7 @@ class Navigator(threading.Thread):
         # initial position
         xpos = self.control_curr_pos.pose.pose.position.x
         ypos = self.control_curr_pos.pose.pose.position.y
-        thetapos = self.control_curr_pos.pose.pose.orientation.z
+        thetapos = self.current_yaw()
         xinit = xpos
         yinit = ypos
 
@@ -129,7 +135,7 @@ class Navigator(threading.Thread):
 
             xpos = self.control_curr_pos.pose.pose.position.x
             ypos = self.control_curr_pos.pose.pose.position.y
-            thetapos = self.control_curr_pos.pose.pose.orientation.z
+            thetapos = self.current_yaw()
 
             terr = td - thetapos
 
@@ -164,7 +170,7 @@ class Navigator(threading.Thread):
 
             xpos = self.control_curr_pos.pose.pose.position.x
             ypos = self.control_curr_pos.pose.pose.position.y
-            thetapos = self.control_curr_pos.pose.pose.orientation.z
+            thetapos = self.current_yaw()
 
             xerr = math.sqrt( (xpos - xd)*(xpos - xd) + (ypos - yd)*(ypos - yd) )
             yerr = (A*xpos + ypos + C)/(math.sqrt(A*A+B*B))
@@ -311,8 +317,9 @@ def waypoint_reached(waypoint):
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
 
+# TODO: shutdown cleanly
 def main():
-    rospy.init_node('navigation')
+    rospy.init_node('navigation', log_level=rospy.DEBUG)
     traversal_navigator = TraversalNavigator()
     capture_navigator = WaypointCaptureNavigator()
 

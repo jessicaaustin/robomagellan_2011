@@ -62,7 +62,7 @@ class GpsLocation():
         odom.pose.pose.position.x = updated_x
         odom.pose.pose.position.y = updated_y
         odom.twist.twist.linear.x = self.knot_to_vel(vel)
-        # TODO convert to radians? right now it's in degrees. need to check what stage does
+        # TODO convert to radians. right now it's in degrees, but navigation node expects radians
         odom.pose.pose.orientation.z = heading
 
         self.publisher.publish(odom)
