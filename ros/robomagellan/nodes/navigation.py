@@ -6,6 +6,18 @@
 # Publishes to:
 #  /cmd_vel
 #
+# This node performs all calcuations in 'course frame':
+#   origin (0, 0) is location of first GPS read
+#   orientation (with robot nose initially pointing at theta=0):
+#            y
+#       pi/2 ^
+#            |
+#      pi    |    0
+#      <-----+----->x
+#      -pi   |    0
+#            |-pi/2
+#            v
+#
 
 import roslib; roslib.load_manifest('robomagellan')
 
@@ -109,7 +121,7 @@ class Navigator(threading.Thread):
         # desired location
         xd = waypoint.coordinate.x
         yd = waypoint.coordinate.y
-        td = math.atan2(yd-yi, xd-xi)/math.pi
+        td = math.atan2(yd-yi, xd-xi)
 
         # check and see if we're already there
         if (math.fabs(xpos-xd) < waypoint_threshold and
@@ -174,7 +186,7 @@ class Navigator(threading.Thread):
 
             xerr = math.sqrt( (xpos - xd)*(xpos - xd) + (ypos - yd)*(ypos - yd) )
             yerr = (A*xpos + ypos + C)/(math.sqrt(A*A+B*B))
-            td = math.atan2(yd - ypos, xd - xpos)/math.pi
+            td = math.atan2(yd - ypos, xd - xpos)
             terr = td - thetapos
 
             rospy.logdebug("*** moving...")
