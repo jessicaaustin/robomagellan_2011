@@ -1,0 +1,10 @@
+
+robomagellan.launch: 
+  run production code
+
+robomagellan-sim-simple-course.launch:
+  simulation, simple course with 3 waypoints and 1 cone. no obstacles
+
+robomagellan-sim-simple-course-2.launch:
+  simulation, simple course with 2 waypoints and 1 cone. no obstacles
+
