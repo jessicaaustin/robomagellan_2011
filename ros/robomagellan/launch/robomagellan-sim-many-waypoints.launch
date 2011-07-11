@@ -1,0 +1,7 @@
+<launch>
+	<node name="rxconsole" pkg="rxtools" type="rxconsole" respawn="false" />
+	<node name="stage" pkg="stage" type="stageros" args="$(find robomagellan)/worlds/many-waypoints.world" respawn="false" />
+	<node name="waypoints" pkg="robomagellan" type="waypoints.py" args="$(find robomagellan)/worlds/many-waypoints.waypoints" respawn="true" />
+	<node name="navigation" pkg="robomagellan" type="navigation.py" respawn="true" />
+	<node name="collision" pkg="robomagellan" type="collision-mock.py" respawn="true" />
+</launch>

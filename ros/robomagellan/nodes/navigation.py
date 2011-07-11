@@ -39,7 +39,6 @@ import settings
 
 # Understands how to move to a given point
 # Runs on a thread, and continues until stop() is called on it
-# TODO fix bug when moving to 3rd quadrant
 class Navigator(threading.Thread):
     def __init__(self):
         # setup thread listener
@@ -105,6 +104,7 @@ class Navigator(threading.Thread):
 
     # Travel from the current robot position to the given waypoint.
     # Uses proportional control for correction
+    # TODO fix bug with controller--seems to be going unstable sometimes
     def move_to_point(self, waypoint, waypoint_threshold):
         rospy.loginfo("Navigator: Moving to location: (%s)", waypoint)
 
@@ -331,7 +331,7 @@ def waypoint_reached(waypoint):
 
 # TODO: shutdown cleanly
 def main():
-    rospy.init_node('navigation', log_level=rospy.DEBUG)
+    rospy.init_node('navigation') #, log_level=rospy.DEBUG)
     traversal_navigator = TraversalNavigator()
     capture_navigator = WaypointCaptureNavigator()
 
