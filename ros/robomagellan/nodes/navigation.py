@@ -8,16 +8,16 @@
 #
 # This node performs all calcuations in 'course frame':
 #   origin (0, 0) is location of first GPS read
-#   orientation (with robot nose initially pointing at theta=0):
-#            y
-#       pi/2 ^
-#            |
-#      pi    |    0
-#      <-----+----->x
-#      -pi   |    0
-#            |-pi/2
-#            v
-#
+#   orientation goes from -pi to pi, (with robot nose initially pointing at theta=0):
+#            y                    y                        
+#       pi/2 ^               pi/2 ^             turnrate direction:
+#            |                    |                   
+#      pi    |    0         pi   ---   0         ---   ^ + 
+#      <-----+----->x       <-- |   > -->x      |   >  | 
+#      -pi   |    0         -pi  ---   0         ---
+#            |-pi/2               |-pi/2   
+#            v                    v             
+#      course frame          robot frame ('>' = robot nose) 
 
 import roslib; roslib.load_manifest('robomagellan')
 
@@ -70,10 +70,13 @@ class Navigator(threading.Thread):
         cmd.angular.z = z
         self.cmd_vel_pub.publish(cmd)
 
-    def current_yaw(self):
+    def current_pos(self):
+        x = self.control_curr_pos.pose.pose.position.x
+        y = self.control_curr_pos.pose.pose.position.y
         q = self.control_curr_pos.pose.pose.orientation
         euler = euler_from_quaternion([q.x, q.y, q.z, q.w])
-        return euler[2]
+        yaw = euler[2]
+        return (x, y, yaw)
 
     def set_waypoint(self, waypoint, waypoint_threshold):
         self.waypoint = waypoint
@@ -109,9 +112,7 @@ class Navigator(threading.Thread):
         rospy.loginfo("Navigator: Moving to location: (%s)", waypoint)
 
         # initial position
-        xpos = self.control_curr_pos.pose.pose.position.x
-        ypos = self.control_curr_pos.pose.pose.position.y
-        thetapos = self.current_yaw()
+        xpos, ypos, thetapos = self.current_pos()
         xinit = xpos
         yinit = ypos
 
@@ -137,6 +138,7 @@ class Navigator(threading.Thread):
         elapsedTime = settings.TIMESTEP
 
         # Parameters for the line we're trying to follow
+        # TODO divide by zero
         slope = (yd - yinit)/(xd - xinit)
         B = 1
         A = -slope
@@ -145,10 +147,7 @@ class Navigator(threading.Thread):
         # FIRST, TURN ON THE SPOT
         while (math.fabs(thetapos - td) > settings.THETA_TOLERANCE and not self.stopped()):
 
-            xpos = self.control_curr_pos.pose.pose.position.x
-            ypos = self.control_curr_pos.pose.pose.position.y
-            thetapos = self.current_yaw()
-
+            xpos, ypos, thetapos = self.current_pos()
             terr = td - thetapos
 
             rospy.logdebug("*** turning...")
@@ -172,7 +171,6 @@ class Navigator(threading.Thread):
             elapsedTime+=settings.TIMESTEP
             rospy.sleep(settings.TIMESTEP)
 
-
         # NOW, MOVE TOWARDS POINT
         while ((math.fabs(xpos-xd) > waypoint_threshold or
                 math.fabs(ypos-yd) > waypoint_threshold) and 
@@ -180,9 +178,7 @@ class Navigator(threading.Thread):
 
             distToPoint = math.sqrt( (xpos-xd)*(xpos-xd) + (ypos-yd)*(ypos-yd) )
 
-            xpos = self.control_curr_pos.pose.pose.position.x
-            ypos = self.control_curr_pos.pose.pose.position.y
-            thetapos = self.current_yaw()
+            xpos, ypos, thetapos = self.current_pos()
 
             xerr = math.sqrt( (xpos - xd)*(xpos - xd) + (ypos - yd)*(ypos - yd) )
             yerr = (A*xpos + ypos + C)/(math.sqrt(A*A+B*B))
@@ -195,6 +191,7 @@ class Navigator(threading.Thread):
             rospy.logdebug("dist=%s", distToPoint)
             rospy.logdebug("theta=%s", thetapos)
             rospy.logdebug("thdes=%s", td)
+            rospy.logdebug("yerr=%s", yerr)
             rospy.logdebug("therr=%s", terr)
 
             speed =  settings.LAMBDA * xerr
@@ -206,6 +203,7 @@ class Navigator(threading.Thread):
                 turnrate = settings.MAX_TURNRATE
             if (turnrate < -settings.MAX_TURNRATE):
                 turnrate = -settings.MAX_TURNRATE
+            rospy.logdebug("turnrate=%s",turnrate)
 
             # move the robot
             self.publish_cmd_vel(speed, turnrate)
@@ -329,7 +327,7 @@ def waypoint_reached(waypoint):
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
 
-# TODO: shutdown cleanly
+# TODO: shutdown cleanly upon kill 
 def main():
     rospy.init_node('navigation') #, log_level=rospy.DEBUG)
     traversal_navigator = TraversalNavigator()
@@ -349,6 +347,7 @@ def main():
         response = waypoint_reached(waypoint)
 
     rospy.loginfo("Done.")
+    rospy.spin()
 
 if __name__ == '__main__':
     try:
