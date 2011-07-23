@@ -36,7 +36,7 @@ THETA_TOLERANCE=.05 #radians
 # feedback proportional to longitudinal (in x dir) velocity
 LAMBDA=.2
 # feedback proportional to lateral (in y dir) error
-A1=2
+A1=1
 # feedback proportional to angular (theta) error
 A2=1
 

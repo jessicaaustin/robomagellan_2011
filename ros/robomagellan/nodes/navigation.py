@@ -130,18 +130,29 @@ class Navigator(threading.Thread):
             rospy.loginfo("Navigator: Point reached!")
             return
 
-        # error in lateral and longitudinal distances
+        # error in longitudinal distance (parallel to line to follow)
         xerr = 0
+        # error in lateral distance (perpendicular to line)
         yerr = 0
+        # angular error (yaw)
         terr = 0
 
         elapsedTime = settings.TIMESTEP
 
-        # Parameters for the line we're trying to follow
-        # TODO divide by zero
+        # yerr = perpendicular distance from line connecting initial pos and desired pos
+        # if the line going from initial point to desired point is defined as
+        #   Ax + By + C = 0
+        # or in another form (where m is the slope of the line)
+        #   y - yd = m(x - xd)
+        # then the distance is from point (m,n) to the line is (http://tinyurl.com/43s7mur)
+        #   (Am + Bn + C)/sqrt(A*A+B*B)
+        # where
+        #   A = -m
+        #   B = 1
+        #   C = m*xd - yd
         slope = (yd - yinit)/(xd - xinit)
-        B = 1
         A = -slope
+        B = 1
         C = slope * xd - yd
 
         # FIRST, TURN ON THE SPOT
@@ -176,29 +187,28 @@ class Navigator(threading.Thread):
                 math.fabs(ypos-yd) > waypoint_threshold) and 
                 not self.stopped()):
 
-            distToPoint = math.sqrt( (xpos-xd)*(xpos-xd) + (ypos-yd)*(ypos-yd) )
-
             xpos, ypos, thetapos = self.current_pos()
 
-            xerr = math.sqrt( (xpos - xd)*(xpos - xd) + (ypos - yd)*(ypos - yd) )
-            yerr = (A*xpos + ypos + C)/(math.sqrt(A*A+B*B))
-            td = math.atan2(yd - ypos, xd - xpos)
-            terr = td - thetapos
+            xerr = math.sqrt( (xpos-xd)*(xpos-xd) + (ypos-yd)*(ypos-yd) )
+            # see notes on yerr above
+            yerr = (A*xpos + B*ypos + C)/(math.sqrt(A*A+B*B))
 
             rospy.logdebug("*** moving...")
             rospy.logdebug("pos=(%s, %s)", xpos, ypos)
             rospy.logdebug("des=(%s, %s)", xd, yd)
-            rospy.logdebug("dist=%s", distToPoint)
+            rospy.logdebug("xerr=%s", xerr)
             rospy.logdebug("theta=%s", thetapos)
             rospy.logdebug("thdes=%s", td)
             rospy.logdebug("yerr=%s", yerr)
-            rospy.logdebug("therr=%s", terr)
 
             speed =  settings.LAMBDA * xerr
             if (speed > settings.MAX_SPEED):
                 speed = settings.MAX_SPEED
 
-            turnrate = -1 * settings.ROBOT_LENGTH * (settings.A1 * yerr - settings.A2 * terr)
+            turnrate = settings.ROBOT_LENGTH * (settings.A1 * yerr)
+            # need to do this because of how we defined theta
+            if (xd > xpos):
+                turnrate *= -1 
             if (turnrate > settings.MAX_TURNRATE):
                 turnrate = settings.MAX_TURNRATE
             if (turnrate < -settings.MAX_TURNRATE):

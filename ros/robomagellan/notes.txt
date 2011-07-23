@@ -13,8 +13,6 @@ test waypoint-touching code:
  - ???
 
 
-TODO add header to all messages
-
 
 top-tier
  waypoints service node
