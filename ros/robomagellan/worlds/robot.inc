@@ -9,8 +9,10 @@ define parallaxping laser
   range_min 0.02
   range_max 3.0
 
-  # 40 degrees field of view
-  fov 40.0
+  # field of view
+  # (says 40 deg on datasheet but this has not been verified)
+  # TODO verify fov for laser
+  fov 20.0
 
   # number of laser samples per scan
   samples 10

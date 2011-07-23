@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
 #
-# Monitors the /odom topic and waypoints service, and publishes
-# to /collision topic whenever it is close to a cone waypoint
+# Reads in list of obstacles from a world file. Then monitors the /odom topic 
+# and publishes to /collision topic whenever it is close to an obstacle
 #
 # For simulation purposes only
-#
-# TODO: have this read in the worlds file, so we can mimic gps being off
 #
 
 import roslib; roslib.load_manifest('robomagellan')
@@ -25,19 +23,31 @@ from nav_msgs.msg import Odometry
 import math
 import settings
 
-
-class CollisionMock():
+# reads in obstacles from a stage world file
+class WorldFileReader():
     def __init__(self):
+        return
+    
+    def read_obstacles(self, filename):
+        rospy.loginfo('Reading world obstacles from file %s' % filename)
+        obstacles = []
+        file = open(filename)
+        line = file.readline()
+        while len(line) > 0:
+            if (line.startswith("cone")):
+                obstacle_coords = line.split("[")[1].split("]")[0].split()
+                obstacles.append(Waypoint('C', Point(float(obstacle_coords[0]), float(obstacle_coords[1]), 0.0)))
+            line = file.readline() 
+        return obstacles
+
+
+# Publishes to collision topic if we're sufficiently close to a cone
+class CollisionMock():
+    def __init__(self, obstacles):
+        self.obstacles = obstacles
         self.current_pos = None
         self.collision_publisher = CollisionPublisher()
-
-    def get_next_waypoint(self):
-        rospy.wait_for_service('next_waypoint')
-        try:
-            next_waypoint = rospy.ServiceProxy('next_waypoint', GetNextWaypoint)
-            return next_waypoint('').waypoint
-        except rospy.ServiceException, e:
-            print "Service call failed: %s"%e
+        rospy.loginfo('CollisionMock: initializing with obstacles:\n %s' % self.obstacles)
 
     def setup_odom_callback(self):
         def odom_callback(data):
@@ -46,20 +56,28 @@ class CollisionMock():
 
     def check_for_collision(self):
         if self.current_pos != None:
-            waypoint = self.get_next_waypoint()
-            if (waypoint.type == 'C' and 
-                    math.fabs(self.current_pos.x-waypoint.coordinate.x) < settings.COLLISION_THRESHOLD and
-                    math.fabs(self.current_pos.y-waypoint.coordinate.y) < settings.COLLISION_THRESHOLD):
-                rospy.loginfo('COLLISION!')
-                self.collision_publisher.publish_collision(True, False)
-            else:
-                self.collision_publisher.publish_collision(False, False)
+            for obstacle in obstacles:
+                if (obstacle.type == 'C' and 
+                        math.fabs(self.current_pos.x-obstacle.coordinate.x) < settings.COLLISION_THRESHOLD and
+                        math.fabs(self.current_pos.y-obstacle.coordinate.y) < settings.COLLISION_THRESHOLD):
+                    rospy.loginfo('COLLISION!')
+                    self.collision_publisher.publish_collision(True, False)
+                else:
+                    self.collision_publisher.publish_collision(False, False)
         else:
             rospy.loginfo('Waiting for current position')
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]) or not os.path.isfile(sys.argv[1]):
+        rospy.logerr('Must supply world file!')
+        sys.exit(1)
+    else:
+        world_file = sys.argv[1]
+    reader = WorldFileReader()
+    obstacles = reader.read_obstacles(world_file)
+
     rospy.init_node('collision_mock')
-    collision_mock = CollisionMock()
+    collision_mock = CollisionMock(obstacles)
     rospy.Subscriber('odom', Odometry, collision_mock.setup_odom_callback())
     while not rospy.is_shutdown():
         collision_mock.check_for_collision()
