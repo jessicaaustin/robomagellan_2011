@@ -2,7 +2,7 @@
 sudo chmod 0666 /dev/parport0
 
 #To program it:
-avrdude -p m32 -c stk200 -P /dev/parport0 -v -y -e -U flash:w:sensorPack.hex:i
+avrdude -p m32 -c stk200 -P /dev/parport0 -v -y -e -U flash:w:sensor_pack.hex:i
 
 #To query it:
 avrdude -p m32 -c stk200 -P /dev/parport0 -n -v
