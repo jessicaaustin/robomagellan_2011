@@ -217,10 +217,10 @@ main (void)
 			}
 		};
 		printLine(buffer);
-		_delay_ms(500.0);
+		_delay_ms(100.0);
 
 		readRangefinder();
-		_delay_ms(500.0);
+		_delay_ms(100.0);
 	}
 
 	printLine("Se|Off");
