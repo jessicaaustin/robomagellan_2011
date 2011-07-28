@@ -6,6 +6,7 @@ chmod a+x sensorPack.py \
 		  gpsLocation.py \
 		  acceleration.py \
 		  motors.py \
+		  control.py \
 		  waypoints.py \
 		  navigation.py
 

@@ -6,12 +6,29 @@ from robomagellan.msg import Range
 from robomagellan.msg import Gyro
 from robomagellan.msg import Collision
 
+currentRange = 0
+lastRange = 0
+rangeTolerance = 5
+stopped = False
+
 def rangeCallback(rangeMessage):
+    global currentRange
 
-    rospy.logdebug(rospy.get_name() + ' Range: %d',
-            rangeMessage.rangeInCm)
+    currentRange = rangeMessage.rangeInCm
 
-    if (rangeMessage.rangeInCm > 60):
+    return
+
+def processRange():
+    global currentRange, lastRange, rangeTolerance, stopped
+
+    if (abs(currentRange - lastRange) < rangeTolerance):
+	return
+
+    lastRange = currentRange
+
+    if (currentRange > 60):
+        stopped = False
+
         rospy.loginfo(rospy.get_name() + ' Moving')
 
         try:
@@ -19,22 +36,30 @@ def rangeCallback(rangeMessage):
 
         except:
              rospy.loginfo('Unable to publish motor command')
-    else:
-        try:
-            #
-            # "escape" behavior
-#
-            rospy.loginfo('Stopping')
-            publisher.publish(stopCommand)
-            rospy.sleep(1.0)
-            publisher.publish(backCommand)
-            rospy.sleep(1.0)
-            publisher.publish(rightTurnCommand)
-            rospy.sleep(1.0)
-            publisher.publish(stopCommand)
 
-        except:
-            rospy.loginfo('Unable to publish motor command')
+        return
+
+    else:
+        if (stopped):
+            return
+        else:
+            stopped = True
+
+            try:
+                #
+                # "escape" behavior
+                #
+                rospy.loginfo('Stopping')
+                publisher.publish(stopCommand)
+                rospy.sleep(1.0)
+                publisher.publish(backCommand)
+                rospy.sleep(1.0)
+                publisher.publish(rightTurnCommand)
+                rospy.sleep(1.0)
+                publisher.publish(stopCommand)
+    
+            except:
+                rospy.loginfo('Unable to publish motor command')
 
 
 def gyroCallback(gyroMessage):
@@ -68,10 +93,10 @@ def controlMotors():
     rospy.init_node('control', anonymous=True)
     rospy.loginfo(rospy.get_name() + ' Started')
     rospy.Subscriber("rangeTopic", Range, rangeCallback)
-    rospy.spin()
-
+    while (not rospy.is_shutdown()):
+        processRange()
+   
 if __name__ == '__main__':
-    currentState = 'STOPPED'
     rightWheelSpeed = 300
     leftWheelSpeed  = 300
     

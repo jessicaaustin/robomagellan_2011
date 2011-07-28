@@ -81,8 +81,6 @@ def sensorPack():
             print sys.exc_info()[0]
             rospy.logerr('Unable to get sensor data')
 
-        time.sleep(0.5)
-
 if __name__== '__main__':
     try:
         sensorPack()
