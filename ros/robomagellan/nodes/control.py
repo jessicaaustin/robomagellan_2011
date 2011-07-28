@@ -12,23 +12,30 @@ def rangeCallback(rangeMessage):
             rangeMessage.rangeInCm)
 
     if (rangeMessage.rangeInCm > 60):
-        moveCommand.leftWheel = 500
-        moveCommand.rightWheel = 500
-        moveCommand.rampUp = 1
         rospy.loginfo(rospy.get_name() + ' Moving')
-        motorCommand = moveCommand
+
+        try:
+             publisher.publish(moveCommand)
+
+        except:
+             rospy.loginfo('Unable to publish motor command')
     else:
-        moveCommand.leftWheel = 0
-        moveCommand.rightWheel = 0
-        moveCommand.rampUp = 0
-        rospy.loginfo(rospy.get_name() + ' Stopping')
-        motorCommand = moveCommand
+        try:
+            #
+            # "escape" behavior
+#
+            rospy.loginfo('Stopping')
+            publisher.publish(stopCommand)
+            rospy.sleep(1.0)
+            publisher.publish(backCommand)
+            rospy.sleep(1.0)
+            publisher.publish(rightTurnCommand)
+            rospy.sleep(1.0)
+            publisher.publish(stopCommand)
 
-    try:
-        publisher.publish(motorCommand)
+        except:
+            rospy.loginfo('Unable to publish motor command')
 
-    except:
-        rospy.loginfo('Unable to publish motor command')
 
 def gyroCallback(gyroMessage):
     rospy.logdebug(rospy.get_name() + ' Gyro rate, direction: %d, %s',
@@ -61,25 +68,23 @@ def controlMotors():
     rospy.init_node('control', anonymous=True)
     rospy.loginfo(rospy.get_name() + ' Started')
     rospy.Subscriber("rangeTopic", Range, rangeCallback)
-    rospy.Subscriber("gyroTopic", Gyro, gyroCallback)
-    rospy.Subscriber("collision", Collision, collisionCallback)
     rospy.spin()
 
 if __name__ == '__main__':
     currentState = 'STOPPED'
-    rightWheelSpeed = 0
-    leftWheelSpeed  = 0
+    rightWheelSpeed = 300
+    leftWheelSpeed  = 300
     
     moveCommand = Move(leftWheel = leftWheelSpeed,
                        rightWheel = rightWheelSpeed,
                        rampUp = 1)
     stopCommand = Move(leftWheel = 0,
                        rightWheel = 0,
-                       rampUp = 0)
-    backCommand = Move(leftWheel = -200,
-                       rightWheel = -200,
                        rampUp = 1)
-    rightTurnCommand = Move(leftWheel = 500,
+    backCommand = Move(leftWheel = -100,
+                       rightWheel = -100,
+                       rampUp = 1)
+    rightTurnCommand = Move(leftWheel = leftWheelSpeed,
                        rightWheel = 0,
                        rampUp = 1)
     
