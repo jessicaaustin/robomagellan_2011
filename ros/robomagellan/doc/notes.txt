@@ -1,0 +1,42 @@
+Test bottom tier:
+  - get a lot of logged data
+    - gps
+    - accel
+    - camera
+    - motors ?
+  - can use these logs to verify that data is being converted properly
+
+test top tier:
+ - can use simulator (stage) to simulate /odom; we're just worried about sending /cmd_vel
+
+test waypoint-touching code:
+ - ???
+
+
+
+top-tier
+ waypoints service node
+   - takes in a list of ORDERED gps waypoints listed in a file
+   - returns the next waypoint to go to
+     - Point coordinate
+     - type (cone, intermediate waypoint)
+   - right now this is very simple, could make this more sophisticated (take obstacles into account, that sort of thing)
+   - waits for a message to say that that waypoint was reached to know when to pop it off the queue
+ navigation node
+   - polls waypoint service for next point
+   - publishes to /cmd_vel
+   - three modes: traverse, avoidance, capture
+     - traverse (goToPoint.py): no obstacles, move as quickly as possible towards next waypoint
+     - avoidance: obstacle lies in path, use tangent bug or other to get back on path
+     - capture: within 3m of a cone waypoint, switch to IR and blob tracking to find cone 
+       - move slowly until /collision goes off
+       - then back up a meter or so before moving on
+   - publishes to waypoints node whenever it has reached a waypoint
+     - this is based on the type of our current waypoint
+       - intermediate waypoint: /odom
+       - cone waypoint: /odom + /collision
+   - if there are no more waypoints, do nothing
+
+
+
+   

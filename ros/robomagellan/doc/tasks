@@ -1,0 +1,93 @@
+HIGH LEVEL REQUIREMENTS
+
+- input the waypoints and finish point
+
+- overall navigation system
+    - GPS
+    - vision to find traffic cones
+    - collision avoidance
+        - physical contact
+        - ultrasonic
+    - when to stop
+    - timer
+
+- position and orientation control
+    - motors
+    - power source
+
+- calibrate sensors and actuators in the environment
+
+- survive and function in the environment
+    assumptions are:
+        no rain
+        reasonably level and hard terrain
+        consistent GPS coverage
+        some minor obstructions
+        no holes to fall into
+        no mapping
+        traffic cones are solid enough that they will close the
+         forward contact switch
+        no GPS accuracy augmentation
+
+- implement the kill switch
+
+- how and where to test
+
+
+
+Input waypoints and finish point
+
+    we'll create an Android application which will be used to map
+    the route, including the waypoints. That path will then be
+    transferred to the robot via USB.
+
+Overall navigation system
+
+    GPS node which publishes a new message whenever any of:
+    latitude, longitude, altitude or velocity changes
+
+    Vision which publishes the X, Y coordinates of the center of
+    the traffic cone color blob, when the blob is visible. No
+    message is published until a color blob is identified.
+
+    Collision avoidance has three components: forward-facing
+    ultrasonic range finders; forward-facing contact switches;
+    and backward-facing contact switches. Range messages are
+    published whenever the range changes. Contact messages are
+    published when contact is made and released. Rangefinder must
+    publish an "infinity" range message.
+
+Position and orientation control
+
+    Motor controllers and contact switch readers.
+    
+    Motor control will be a service, which will
+       - change state to a given velocity
+       - spin in place, left or right, so many degrees
+       The service response will be either a confirmation that
+       the change has been completed or failed.
+
+        Contact switch state changes will be published as an
+        asynchronous message.
+
+        Figure out how to send the next motor control command
+        after the previous command has been sent but before the
+        previous command has finished executing.
+
+HIGH LEVEL LOGIC LOOP
+
+    Calibration
+
+    Read the path
+
+    Navigation node loop
+        Calculate next vector to waypoint
+
+        Move to waypoint
+
+
+Next Step
+    build a motor control service
+    build a GPS node
+    build a node to read GPS messages and attempt
+     to reach a made-up destination
