@@ -1,0 +1,2 @@
+gpsbabel -T -i garmin -f /dev/cu.PL2303-00004006 -o nmea -F - | tee gpsbabel_gpsiiplus_test_data.txt
+
